@@ -1,213 +1,235 @@
-﻿# Trimify — Agent Instructions (agent.md)
+# Trimify — Agent Instructions
 
-> Dokumen ini adalah panduan operasional untuk AI agent (Antigravity / Claude / Gemini) yang bekerja pada proyek Trimify. Semua kontributor AI **wajib** mengikuti instruksi ini sebelum membuat perubahan apapun.
-
----
-
-## 1. Prinsip Utama
-
-1. **Zero Logic Change** — Saat mengerjakan perubahan UI/UX, jangan pernah menyentuh JavaScript logic, state management, CropEngine, event binding, atau DOM ID yang digunakan JS.
-2. **Design First** — Selalu baca design.md sebelum membuat perubahan visual apapun. Semua perubahan CSS harus konsisten dengan design system di sana.
-3. **Preserve All IDs** — Semua id="..." di HTML adalah kontrak dengan JavaScript. Jangan rename, hapus, atau pindahkan tanpa audit menyeluruh.
-4. **Minimal Footprint** — Buat perubahan sekecil mungkin. Jangan refactor sesuatu yang tidak diminta.
-5. **Indonesian Copy** — Semua teks UI dalam Bahasa Indonesia. Jangan translate ke Bahasa Inggris kecuali diminta.
+> Panduan operasional untuk AI agent yang bekerja pada proyek **Trimify**. Baca seluruh dokumen ini sebelum membuat perubahan apapun.
 
 ---
 
-## 2. Struktur Proyek
+## 1. Ringkasan Proyek
+
+**Trimify** adalah aplikasi web bulk auto-crop transparent PNG. Semua pemrosesan 100% lokal di browser — tidak ada upload ke server.
+
+- **Stack:** React 19 + TypeScript + Vite + Zustand + Vanilla CSS
+- **Dev server:** `npm run dev` → `http://localhost:3000`
+- **Build:** `npm run build`
+- **Lint:** `npx tsc --noEmit`
+
+---
+
+## 2. Arsitektur & Struktur File
 
 ```
-trimify---bulk-png-crop/
-├── index.html          ← Satu-satunya file aplikasi (HTML + CSS + JS semua di sini)
-├── design.md           ← Design system & token reference
-├── agent.md            ← Instruksi ini
-├── package.json        ← Build config (Vite, React — tapi app berjalan dari index.html)
-├── vite.config.ts      ← Vite config (HMR disabled di AI Studio)
-├── src/
-│   ├── App.tsx         ← Kosong (placeholder)
-│   ├── main.tsx        ← Kosong (placeholder)
-│   └── index.css
-└── assets/
+src/
+├── index.css                  ← SEMUA CSS (design tokens + komponen)
+├── main.tsx                   ← Entry point React
+├── App.tsx                    ← Root component (memanggil semua hooks + komponen)
+│
+├── store/
+│   ├── useAppStore.ts         ← Zustand: state antrean (files, status, dll)
+│   └── useDialogStore.ts      ← Zustand: state modal/toast/dialog
+│
+├── lib/                       ← Pure logic, tanpa React
+│   ├── cropEngine.ts          ← Pixel boundary scanner + image processor
+│   ├── utils.ts               ← formatBytes, formatTime, getExt
+│   ├── logger.ts              ← log(), loggerLines[], copyConsoleLogs()
+│   ├── queueActions.ts        ← addFilesToQueue(), clearFilesQueue()
+│   ├── zipExporter.ts         ← downloadZipArchive() via jszip + file-saver
+│   └── settings.ts            ← getSettingsParameters() — baca DOM input
+│
+├── hooks/                     ← Imperative DOM event hooks
+│   ├── useFileUpload.ts       ← drag/drop + file/folder input listeners
+│   ├── useProcessingQueue.ts  ← useSettings(), startQueueProcessing(), dll
+│   └── usePreview.ts          ← canvas rendering before/after via custom event
+│
+└── components/                ← UI komponen (JSX)
+    ├── AppHeader.tsx           ← Header + stats bar
+    ├── Sidebar.tsx             ← Sidebar: Upload + CropParams + Output + Buttons
+    ├── DropZone.tsx            ← Drag area
+    ├── ProgressPanel.tsx       ← Progress bar + timer
+    ├── FileQueueTable.tsx      ← Tabel antrean file
+    ├── PreviewPanel.tsx        ← Canvas before/after + meta bar
+    ├── BottomBar.tsx           ← Console log + about card
+    └── Modals.tsx              ← Toast, Donation, Alert Dialog, Confirm Dialog
 ```
-
-### Catatan Arsitektur Penting
-
-- Seluruh logika aplikasi ada di **index.html** dalam <script> tag inline.
-- Aplikasi ini adalah **pure vanilla JS + HTML** — tidak menggunakan React/TSX.
-- src/App.tsx dan src/main.tsx **tidak digunakan** oleh aplikasi utama.
-- CDN external yang digunakan (jangan diganti atau dihapus):
-  - jszip.min.js → untuk pembuatan arsip ZIP
-  - FileSaver.min.js → untuk trigger download file
-  - lucide@latest → untuk icon library
-  - Google Fonts (Inter + JetBrains Mono)
 
 ---
 
-## 3. DOM Contract — Protected Elements
+## 3. Prinsip Utama
 
-Elemen-elemen berikut memiliki id yang digunakan oleh JavaScript. **Jangan diubah:**
+1. **Preserve DOM IDs** — Semua `id="..."` di JSX adalah kontrak antara HTML dan `lib/` hooks. Jangan rename tanpa audit penuh.
+2. **Zustand via `getState()`** — Logic di `lib/` dan `hooks/` tidak boleh pakai `useStore()` hook — gunakan `useAppStore.getState()` / `useDialogStore.getState()` karena dipanggil di luar React tree.
+3. **Custom Event Bridge** — Preview dipicu lewat `document.dispatchEvent(new CustomEvent('trimify:preview', { detail: { id } }))`. `usePreview.ts` yang mendengarkan event ini.
+4. **Vanilla CSS only** — Tidak ada Tailwind. Semua styling pakai class dan CSS variables dari `src/index.css`.
+5. **Indonesian Copy** — Semua teks UI dalam Bahasa Indonesia.
+6. **Minimal Footprint** — Ubah sekecil mungkin. Jangan refactor yang tidak diminta.
 
-### Input Controls (dibaca oleh getSettingsParameters())
-- #input-threshold
-- #input-noise
-- #input-padding
-- #input-format
-- #input-quality
-- #input-bg-color
-- #input-preserve-folder
-- #input-overwrite-filename
-- #file-input-files
-- #file-input-folder
+---
 
-### Slider Value Displays
-- #val-threshold
-- #val-noise
-- #val-padding
-- #val-quality
-- #val-bg-color
+## 4. State Management
 
-### Conditional Visibility Containers
-- #container-quality → show/hide saat format berubah
-- #container-bg-color → show/hide saat format JPEG dipilih
-- #label-quality → textContent diubah JS
+### `useAppStore` (Zustand)
+Akses di komponen: `const { files } = useAppStore();`
+Akses di lib/hooks: `useAppStore.getState().files`
 
-### Buttons (semua event listener terikat di sini)
-- #btn-start
-- #btn-pause
-- #btn-resume
-- #btn-cancel
-- #btn-download
-- #btn-clear
-- #btn-copy-log
-- #btn-clear-log
+| Field | Type | Keterangan |
+|-------|------|-----------|
+| `status` | `'IDLE' \| 'PROCESSING' \| 'PAUSED' \| 'STOPPED'` | Status proses |
+| `files` | `FileItem[]` | Array file dalam antrean |
+| `selectedPreviewId` | `string \| null` | ID file yang sedang di-preview |
+| `elapsedSeconds` | `number` | Detik proses berjalan |
+| `pauseResolver` | `(() => void) \| null` | Promise resolver untuk pause |
+
+Actions: `addFiles`, `updateFile`, `clearFiles`, `setStatus`, `setPauseResolver`, dll.
+
+### `useDialogStore` (Zustand)
+| Method | Fungsi |
+|--------|--------|
+| `showToast(title, desc, icon)` | Tampilkan toast notification |
+| `showAlertDialog(title, desc, type)` | Tampilkan alert modal |
+| `showConfirmDialog({ title, desc, confirmText, onConfirm })` | Tampilkan confirm modal |
+| `openDonationModal()` | Buka modal donasi QRIS |
+
+---
+
+## 5. DOM Contract — ID yang Digunakan JS/Hooks
+
+> ⚠️ Jangan rename atau hapus ID berikut. Digunakan oleh `lib/` dan `hooks/`.
+
+### Input Settings (dibaca `settings.ts`)
+- `#input-threshold`, `#input-noise`, `#input-padding`
+- `#input-format`, `#input-quality`, `#input-bg-color`
+- `#input-preserve-folder`, `#input-overwrite-filename`
+- `#val-threshold`, `#val-noise`, `#val-padding`, `#val-quality`, `#val-bg-color`
+
+### File Inputs (dipakai `useFileUpload.ts`)
+- `#file-input-files` — input file individual
+- `#file-input-folder` — input folder (webkitdirectory)
+- `#dropzone` — drag area
+
+### Buttons (dikontrol `useProcessingQueue.ts`)
+- `#btn-start`, `#btn-pause`, `#btn-resume`, `#btn-cancel`
+- `#btn-download`, `#btn-clear`
+- `#btn-copy-log`, `#btn-clear-log`
+
+### Conditional Visibility
+- `#container-quality` → show/hide saat format WebP/JPEG
+- `#container-bg-color` → show/hide saat format JPEG
+- `#label-quality` → textContent diubah JS
 
 ### Progress Panel
-- #progress-panel → display toggle
-- #progress-status → textContent
-- #progress-bar-fill → style.width
-- #progress-file-info → textContent
-- #progress-time-elapsed → textContent
-- #progress-time-remaining → textContent
+- `#progress-panel`, `#progress-status`, `#progress-bar-fill`
+- `#progress-file-info`, `#progress-time-elapsed`, `#progress-time-remaining`
 
 ### File Table
-- #file-table → table element
-- #file-table-body → tbody, innerHTML dioverwrite JS
-- #table-empty-state → show/hide
-- #badge-total-files → textContent
+- `#file-table-body` → innerHTML di-overwrite oleh `updateFileListUI()`
+- `#table-empty-state`, `#badge-total-files`
+- `#row-{item.id}` → tr dinamis, jangan buat static element dengan prefix ini
 
 ### Preview Panel
-- #preview-workspace → container
-- #canvas-preview-before → canvas element
-- #canvas-preview-after → canvas element
-- #preview-filename-badge → textContent
-- #preview-meta-row → opacity toggle
-- #preview-dim-before → textContent
-- #preview-dim-after → textContent
-- #preview-size-change → textContent
-- #preview-area-reduced → textContent
+- `#canvas-preview-before`, `#canvas-preview-after` — canvas element
+- `#preview-filename-badge`, `#preview-meta-row`
+- `#preview-dim-before`, `#preview-dim-after`
+- `#preview-size-change`, `#preview-area-reduced`
 
 ### Stats Header
-- #stat-processed-count → textContent
-- #stat-saved-space → textContent
+- `#stat-processed-count`, `#stat-saved-space`
 
-### Dropzone
-- #dropzone → event listeners (dragover, dragleave, drop, click)
-
-### Console Logger
-- #console-output → appendChild target
+### Console Log
+- `#console-output` — target `appendChild` dari `log()`
 
 ### Toast
-- #success-toast → classList.add/remove 'show'
-- #toast-message → textContent
-
-### Dynamic Row IDs (JS-generated)
-- #row-{item.id} → tr elements dibuat dinamis oleh JS
-- Jangan buat static element dengan prefix ow-
+- `#success-toast` — dikelola oleh `Modals.tsx` + `useDialogStore`
 
 ---
 
-## 4. CSS Classes Contract
-
-Class-class berikut digunakan oleh JavaScript (tambah/hapus lewat classList):
+## 6. CSS Classes yang Dikontrol JS
 
 | Class | Digunakan di |
-|---|---|
-| .dragover | #dropzone saat file di-drag |
-| .selected-row | <tr> di file table saat dipilih |
-| .active-row | <tr> saat file sedang diproses |
-| .spinner | Icon yang sedang berputar |
-| .show | Toast notification saat muncul |
-| .badge-pending | Status badge JS-generated |
-| .badge-processing | Status badge JS-generated |
-| .badge-success | Status badge JS-generated |
-| .badge-failed | Status badge JS-generated |
-| .savings-indicator | Span persen penghematan |
-| .log-entry | Baris console log |
-| .log-timestamp | Timestamp dalam log |
-| .log-text | Teks log |
-| .log-info | Log type info |
-| .log-success | Log type success |
-| .log-warning | Log type warning |
-| .log-error | Log type error |
+|-------|-------------|
+| `.dragover` | `#dropzone` saat file di-drag |
+| `.selected-row` | `<tr>` file yang dipilih |
+| `.active-row` | `<tr>` file yang sedang diproses |
+| `.spinner` | Icon animasi loading |
+| `.show` | Toast/modal saat muncul |
+| `.open` | Accordion body/chevron saat terbuka |
+| `.badge-pending/processing/success/failed` | Badge status di tabel |
+| `.savings-indicator` | Span persen penghematan |
+| `.log-info/success/warning/error` | Warna baris log |
 
 ---
 
-## 5. Workflow untuk UI Changes
+## 7. Cara Kerja Key Flows
 
-Ikuti langkah ini setiap kali diminta mengubah UI:
+### Upload File
+1. User klik dropzone atau tombol "Pilih File/Folder" → `useFileUpload.ts` menangkap event
+2. → `addFilesToQueue(files)` di `queueActions.ts`
+3. → `useAppStore.getState().addFiles(newItems)` update Zustand
+4. → `showToast()` / `showAlertDialog()` untuk feedback
 
-1. **Baca design.md** — Pastikan perubahan sesuai token yang ada
-2. **Audit DOM Contract** — Pastikan semua id dan class yang digunakan JS tetap ada
-3. **Edit hanya <style> dan HTML struktur** — JavaScript <script> tidak disentuh
-4. **Verifikasi visual** — Pastikan 
-pm run dev berjalan dan tampilan sesuai design system
-5. **Cek fungsionalitas** — Semua tombol dan interaksi tetap berfungsi
+### Proses Crop
+1. Klik "Mulai Auto Crop" → `startQueueProcessing()` di `useProcessingQueue.ts`
+2. Loop: `processNextInQueue()` → `CropEngine.processSingleFile(file, settings)`
+3. → `useAppStore.getState().updateFile(id, result)`
+4. → Dispatch `trimify:preview` event → `usePreview.ts` render canvas
+
+### Preview
+- Dipicu via: `document.dispatchEvent(new CustomEvent('trimify:preview', { detail: { id } }))`
+- `usePreview.ts` mendengarkan event ini dan render canvas before/after
+
+### Dialog/Toast
+- Selalu pakai `useDialogStore.getState().showAlertDialog(...)` — **jangan gunakan browser `alert()`**
 
 ---
 
-## 6. Code Style untuk CSS
+## 8. Panduan Edit per Layer
 
-```css
-/* Gunakan CSS Custom Properties dari design.md */
-/* Contoh yang BENAR: */
-color: var(--color-text-primary);
-background: var(--color-bg-secondary);
-border: 1px solid var(--color-border-subtle);
+| Yang ingin diubah | File yang diedit |
+|-------------------|-----------------|
+| Tampilan CSS/layout | `src/index.css` |
+| Teks/struktur UI | file di `src/components/` |
+| Logika crop | `src/lib/cropEngine.ts` |
+| State/actions | `src/store/useAppStore.ts` |
+| Modal/dialog | `src/store/useDialogStore.ts` + `src/components/Modals.tsx` |
+| Event listeners upload | `src/hooks/useFileUpload.ts` |
+| Loop proses antrean | `src/hooks/useProcessingQueue.ts` |
+| Canvas preview | `src/hooks/usePreview.ts` |
+| ZIP download | `src/lib/zipExporter.ts` |
 
-/* Contoh yang SALAH: */
-color: #1C1C1E; /* hardcode */
-background: #F5F5F7; /* hardcode */
+---
+
+## 9. Larangan Keras
+
+- ❌ Jangan gunakan `alert()`, `confirm()` browser native — pakai `useDialogStore`
+- ❌ Jangan gunakan Tailwind utility classes
+- ❌ Jangan gunakan `!important` kecuali terpaksa
+- ❌ Jangan pakai `useAppStore()` hook di dalam `lib/` — pakai `.getState()`
+- ❌ Jangan hapus atau rename DOM ID yang terdaftar di Section 5
+- ❌ Jangan install dependency baru tanpa diskusi
+- ❌ Jangan gunakan `initialized.current` guard di `useEffect` — menyebabkan StrictMode bug
+
+---
+
+## 10. Testing Checklist Sebelum Commit
+
+```
+npm run lint   → npx tsc --noEmit (harus 0 errors)
+npm run build  → vite build (harus success)
 ```
 
-- Definisikan semua token di :root di awal <style>
-- Gunakan ar() konsisten — jangan mix hardcode dan variable
-- Tulis komentar section dengan /* === SECTION NAME === */
-
----
-
-## 7. Larangan Keras
-
-- ❌ Jangan install dependency baru tanpa izin eksplisit
-- ❌ Jangan ubah package.json atau ite.config.ts untuk UI changes
-- ❌ Jangan pindah logic ke file terpisah tanpa diskusi
-- ❌ Jangan gunakan Tailwind utility classes (app ini vanilla CSS)
-- ❌ Jangan gunakan !important kecuali sangat terpaksa
-- ❌ Jangan hapus atau comment-out JavaScript yang ada
-- ❌ Jangan ubah urutan load CDN scripts di <head>
-
----
-
-## 8. Testing Checklist Sebelum Commit
-
-- [ ] 
-pm run dev berjalan tanpa error di konsol browser
-- [ ] Drag & drop file PNG berfungsi
-- [ ] Tombol Pilih File dan Pilih Folder berfungsi
-- [ ] Slider threshold, noise, padding mengupdate nilai display
-- [ ] Format selector menampilkan/menyembunyikan quality dan bg-color input
-- [ ] Tombol Mulai Auto Crop berfungsi dan progress bar berjalan
-- [ ] Preview before/after ditampilkan saat file diklik di tabel
-- [ ] Tombol Download Hasil ZIP berfungsi
-- [ ] Toast notification muncul setelah proses selesai
-- [ ] Console log menampilkan aktivitas
-- [ ] Responsive — tidak ada overflow horizontal
+### Manual di Browser
+- [ ] Drag & drop file/folder PNG → file masuk antrean + toast muncul
+- [ ] Tombol "Pilih File" dan "Pilih Folder" berfungsi
+- [ ] Upload non-PNG → alert dialog muncul
+- [ ] Upload duplikat → alert dialog muncul
+- [ ] Slider threshold/noise/padding → nilai display update
+- [ ] Format selector → quality/bg-color input show/hide
+- [ ] Tombol "Mulai Auto Crop" → progress bar berjalan
+- [ ] Pause / Resume / Cancel berfungsi
+- [ ] Preview before/after canvas muncul saat file diklik
+- [ ] Accordion "Parameter Crop" collapse/expand
+- [ ] Download Hasil ZIP berfungsi
+- [ ] Clear queue → confirm dialog muncul
+- [ ] Toast muncul setelah crop selesai
+- [ ] Donation modal + QRIS tampil
+- [ ] Alert/Confirm dialog tampil (custom, bukan browser native)
+- [ ] Escape key menutup semua modal
+- [ ] Log aktivitas ter-update, Copy/Clear berfungsi
