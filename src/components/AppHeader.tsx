@@ -1,12 +1,11 @@
 import React from 'react';
-import { Scissors } from 'lucide-react';
 
 export default function AppHeader() {
   return (
     <header>
       <div className="header-title-container">
         <div className="header-logo">
-          <Scissors size={20} color="white" strokeWidth={2.5} />
+          <img src="/favicon.svg" alt="Trimify Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
         </div>
         <div>
           <h1>Trimify</h1>
