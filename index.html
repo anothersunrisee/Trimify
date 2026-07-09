@@ -1730,10 +1730,10 @@
     <!-- ========================================== -->
     <div class="toast" id="success-toast">
       <div class="toast-icon">
-        <i data-lucide="check-circle-2" style="width: 24px; height: 24px;"></i>
+        <i id="toast-icon" data-lucide="check-circle-2" style="width: 24px; height: 24px;"></i>
       </div>
       <div>
-        <div class="toast-title">Kompresi Selesai!</div>
+        <div class="toast-title" id="toast-title">Kompresi Selesai!</div>
         <div class="toast-desc" id="toast-message">Seluruh antrean PNG berhasil dipangkas sempurna.</div>
       </div>
     </div>
@@ -2275,15 +2275,20 @@
       //            QUEUE DATA ACTIONS
       // ==========================================
       function addFilesToQueue(rawFileList) {
+        if (!rawFileList || rawFileList.length === 0) return;
+
         // We only allow PNG as input source
         const pngFiles = rawFileList.filter(f => f.name.toLowerCase().endsWith('.png'));
         const rejectedCount = rawFileList.length - pngFiles.length;
 
-        if (rejectedCount > 0) {
-          log(`Mengabaikan ${rejectedCount} file non-PNG. Trimify hanya menerima format input PNG.`, 'warning');
+        if (pngFiles.length === 0) {
+          log(`Gagal menambah: ${rejectedCount} file non-PNG diabaikan.`, 'warning');
+          showAppDialog('Format Tidak Didukung', 'Tidak ada file .PNG pada pilihan Anda. Trimify saat ini hanya mendukung gambar dengan format PNG transparan.', 'warning');
+          return;
         }
 
-        if (pngFiles.length === 0) return;
+        let addedCount = 0;
+        let duplicateCount = 0;
 
         pngFiles.forEach(file => {
           // Check for duplication
@@ -2293,7 +2298,10 @@
             return p1 === p2;
           });
 
-          if (isDuplicate) return;
+          if (isDuplicate) {
+            duplicateCount++;
+            return;
+          }
 
           const item = {
             id: 'file-' + Math.random().toString(36).substring(2, 9),
@@ -2313,17 +2321,33 @@
           };
 
           appState.files.push(item);
+          addedCount++;
         });
 
-        log(`Berhasil menambahkan ${pngFiles.length} berkas PNG ke dalam antrean.`, 'success');
-        
+        if (addedCount === 0) {
+          if (duplicateCount > 0) {
+            log(`Diabaikan: ${duplicateCount} file sudah ada di dalam antrean.`, 'info');
+            showAppDialog('File Sudah Ada', `${duplicateCount} file PNG yang dipilih sudah ada di dalam daftar antrean.`, 'info');
+          }
+          return;
+        }
+
+        log(`Berhasil menambahkan ${addedCount} berkas PNG ke dalam antrean.`, 'success');
+
+        // Feedback toast or modal dialog if some files were rejected
+        if (rejectedCount > 0) {
+          showAppDialog('Sebagian File Diabaikan', `Berhasil menambahkan ${addedCount} file PNG ke antrean. ${rejectedCount} file non-PNG dilewati karena format tidak didukung.`, 'warning');
+        } else {
+          showToast('File Ditambahkan', `${addedCount} berkas PNG berhasil masuk antrean.`, 'file-check');
+        }
+
         // Refresh UI
         updateFileListUI();
         updateGeneralStats();
-        
+
         // Enable buttons
         document.getElementById('btn-start').removeAttribute('disabled');
-        
+
         // If there's no selected preview, select this first file
         if (!appState.selectedPreviewId && appState.files.length > 0) {
           loadPreviewFile(appState.files[0].id);
@@ -3017,16 +3041,30 @@
         });
       }
 
-      function showToastNotification() {
+      function showToast(title, desc, iconName = 'check-circle-2') {
         const toast = document.getElementById('success-toast');
-        const completedCount = appState.files.filter(f => f.status === 'success').length;
-        
-        document.getElementById('toast-message').textContent = `${completedCount} dari ${appState.files.length} file PNG berhasil dipangkas sempurna.`;
-        
+        document.getElementById('toast-title').textContent = title;
+        document.getElementById('toast-message').textContent = desc;
+
+        const iconEl = document.getElementById('toast-icon');
+        if (iconEl) {
+          iconEl.setAttribute('data-lucide', iconName);
+          lucide.createIcons({ attrs: { 'stroke-width': 2 } });
+        }
+
         toast.classList.add('show');
         setTimeout(() => {
           toast.classList.remove('show');
-        }, 5000);
+        }, 4000);
+      }
+
+      function showToastNotification() {
+        const completedCount = appState.files.filter(f => f.status === 'success').length;
+        showToast(
+          'Kompresi Selesai!',
+          `${completedCount} dari ${appState.files.length} file PNG berhasil dipangkas sempurna.`,
+          'check-circle-2'
+        );
       }
 
       // === ACCORDION TOGGLE ===
