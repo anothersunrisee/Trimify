@@ -11,6 +11,7 @@ import {
 } from '../hooks/useProcessingQueue';
 import { downloadZipArchive } from '../lib/zipExporter';
 import { clearFilesQueue } from '../lib/queueActions';
+import { useAppStore } from '../store/useAppStore';
 
 function UploadSection() {
   return (
@@ -161,35 +162,90 @@ function OutputSettingsPanel() {
           <PlayCircle size={14} />
           Tindakan Proses
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <button className="btn btn-primary" id="btn-start" style={{ width: '100%' }} disabled onClick={startQueueProcessing}>
-            <Play size={14} />
-            Mulai Auto Crop
-          </button>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-            <button className="btn" id="btn-pause" disabled style={{ display: 'none' }} onClick={pauseQueueProcessing}>
-              <Pause size={14} />
-              Pause
-            </button>
-            <button className="btn btn-secondary" id="btn-resume" disabled style={{ display: 'none' }} onClick={resumeQueueProcessing}>
-              <Play size={14} />
-              Resume
-            </button>
-            <button className="btn btn-danger" id="btn-cancel" disabled style={{ display: 'none' }} onClick={cancelQueueProcessing}>
-              <X size={14} />
-              Batal
-            </button>
-          </div>
-          <button className="btn btn-secondary" id="btn-download" style={{ width: '100%' }} disabled onClick={downloadZipArchive}>
-            <Download size={14} />
-            Download Hasil ZIP
-          </button>
-          <button className="btn btn-danger" id="btn-clear" style={{ width: '100%' }} onClick={clearFilesQueue}>
-            <Trash2 size={14} />
-            Hapus Semua Antrean
-          </button>
-        </div>
+        <ActionButtons />
       </div>
+    </>
+  );
+}
+
+function ActionButtons() {
+  const { files, status } = useAppStore();
+  const processing = status === 'PROCESSING';
+  const paused = status === 'PAUSED';
+  const idle = status === 'IDLE' || status === 'STOPPED';
+  const hasFiles = files.length > 0;
+  const hasSuccess = files.some(f => f.status === 'success');
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <button 
+        className="btn btn-primary" 
+        id="btn-start" 
+        style={{ width: '100%', display: processing ? 'none' : 'block' }} 
+        disabled={!hasFiles || !idle} 
+        onClick={startQueueProcessing}
+      >
+        <Play size={14} />
+        Mulai Auto Crop
+      </button>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+        <button 
+          className="btn" 
+          id="btn-pause" 
+          style={{ display: processing ? 'inline-flex' : 'none' }} 
+          disabled={!processing} 
+          onClick={pauseQueueProcessing}
+        >
+          <Pause size={14} />
+          Pause
+        </button>
+        <button 
+          className="btn btn-secondary" 
+          id="btn-resume" 
+          style={{ display: paused ? 'inline-flex' : 'none' }} 
+          disabled={!paused} 
+          onClick={resumeQueueProcessing}
+        >
+          <Play size={14} />
+          Resume
+        </button>
+        <button 
+          className="btn btn-danger" 
+          id="btn-cancel" 
+          style={{ display: (processing || paused) ? 'inline-flex' : 'none' }} 
+          disabled={idle} 
+          onClick={cancelQueueProcessing}
+        >
+          <X size={14} />
+          Batal
+        </button>
+      </div>
+
+      <button 
+        className="btn btn-secondary" 
+        id="btn-download" 
+        style={{ width: '100%' }} 
+        disabled={!hasSuccess || processing} 
+        onClick={downloadZipArchive}
+      >
+        <Download size={14} />
+        Download Hasil ZIP
+      </button>
+
+      <button 
+        className="btn btn-danger" 
+        id="btn-clear" 
+        style={{ width: '100%' }} 
+        disabled={processing} 
+        onClick={clearFilesQueue}
+      >
+        <Trash2 size={14} />
+        Hapus Semua Antrean
+      </button>
+    </div>
+  );
+}
     </>
   );
 }

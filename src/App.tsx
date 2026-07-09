@@ -9,7 +9,7 @@ import BottomBar from './components/BottomBar';
 import Modals from './components/Modals';
 import { useFileUpload } from './hooks/useFileUpload';
 import { usePreview } from './hooks/usePreview';
-import { useSettings, useProcessingControls } from './hooks/useProcessingQueue';
+import { useSettings } from './hooks/useProcessingQueue';
 import { log } from './lib/logger';
 
 export default function App() {
@@ -17,7 +17,6 @@ export default function App() {
   useFileUpload();
   usePreview();
   useSettings();
-  useProcessingControls();
 
   useEffect(() => {
     log('Aplikasi Auto Crop lokal siap digunakan. Silakan taruh file Anda.');
