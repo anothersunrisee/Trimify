@@ -1,16 +1,11 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { addFilesToQueue, readDroppedItems } from '../lib/queueActions';
 import { log } from '../lib/logger';
 
 // useFileUpload — registers drag/drop and file input event listeners
 // Identical logic to bindEvents() in index.html
 export function useFileUpload() {
-  const initialized = useRef(false);
-
   useEffect(() => {
-    if (initialized.current) return;
-    initialized.current = true;
-
     const dropzone = document.getElementById('dropzone') as HTMLElement | null;
     const fileInputFiles = document.getElementById('file-input-files') as HTMLInputElement | null;
     const fileInputFolder = document.getElementById('file-input-folder') as HTMLInputElement | null;
@@ -60,6 +55,7 @@ export function useFileUpload() {
     fileInputFiles.addEventListener('change', onFileInputChange);
     fileInputFolder.addEventListener('change', onFolderInputChange);
 
+    // Cleanup properly removes listeners — this is safe with StrictMode double-invoke
     return () => {
       dropzone.removeEventListener('dragover', onDragOver);
       dropzone.removeEventListener('dragleave', onDragLeave);
