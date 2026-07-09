@@ -1,0 +1,2534 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Trimify - Bulk Auto Crop Transparent Pixels</title>
+    <!-- Google Fonts: Inter & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- External Libraries from CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- ========================================== -->
+    <!--                   CSS                      -->
+    <!-- ========================================== -->
+    <style>
+      :root {
+        --bg-main: #09090b;        /* zinc-950 */
+        --bg-panel: #18181b;       /* zinc-900 */
+        --bg-input: #27272a;       /* zinc-800 */
+        --bg-input-hover: #3f3f46; /* zinc-700 */
+        --border-color: #27272a;   /* zinc-800 */
+        --text-primary: #f4f4f5;   /* zinc-100 */
+        --text-secondary: #a1a1aa; /* zinc-400 */
+        --text-muted: #71717a;     /* zinc-500 */
+        --accent-emerald: #10b981; /* emerald-500 */
+        --accent-emerald-hover: #059669; /* emerald-600 */
+        --accent-blue: #10b981;    /* Sleek theme uses emerald accents */
+        --accent-blue-hover: #059669;
+        --accent-amber: #f59e0b;
+        --accent-rose: #f43f5e;
+        --accent-rose-hover: #e11d48;
+        
+        --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+        --font-mono: 'JetBrains Mono', monospace;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        background-color: var(--bg-main);
+        color: var(--text-primary);
+        font-family: var(--font-sans);
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      /* Scrollbar Styling */
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: var(--bg-main);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--border-color);
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: var(--text-muted);
+      }
+
+      /* Layout */
+      header {
+        background-color: var(--bg-panel);
+        border-bottom: 1px solid var(--border-color);
+        padding: 0.85rem 1.5rem; /* Sleek compact header padding */
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-shrink: 0;
+        z-index: 10;
+      }
+
+      .header-title-container {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+
+      .header-logo {
+        background: var(--accent-emerald);
+        padding: 0.5rem;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--bg-main);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+      }
+
+      header h1 {
+        font-size: 1.15rem;
+        font-weight: 700;
+        letter-spacing: -0.025em;
+        background: linear-gradient(to right, #ffffff, #d4d4d8);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      header p {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        margin-top: 0.1rem;
+      }
+
+      .header-stats {
+        display: flex;
+        gap: 1.5rem;
+      }
+
+      .header-stat-item {
+        text-align: right;
+      }
+
+      .header-stat-label {
+        font-size: 0.65rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-muted);
+      }
+
+      .header-stat-value {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--accent-emerald);
+        font-family: var(--font-mono);
+      }
+
+      .main-container {
+        display: flex;
+        flex: 1;
+        overflow: hidden;
+        position: relative;
+      }
+
+      /* Sidebar Settings */
+      .sidebar {
+        width: 288px; /* Sleek narrow sidebar (w-72) */
+        background-color: var(--bg-panel);
+        border-right: 1px solid var(--border-color);
+        display: flex;
+        flex-direction: column;
+        flex-shrink: 0;
+        overflow-y: auto;
+      }
+
+      .sidebar-section {
+        padding: 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+      }
+
+      .sidebar-section:last-child {
+        border-bottom: none;
+      }
+
+      .section-title {
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.075em;
+        color: var(--text-secondary);
+        font-weight: 700;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .setting-group {
+        margin-bottom: 1.25rem;
+      }
+
+      .setting-group:last-child {
+        margin-bottom: 0;
+      }
+
+      .setting-label-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+      }
+
+      .setting-label {
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: var(--text-primary);
+      }
+
+      .setting-value {
+        font-size: 0.8rem;
+        font-family: var(--font-mono);
+        color: var(--accent-blue);
+        background-color: var(--bg-main);
+        padding: 0.15rem 0.4rem;
+        border-radius: 4px;
+        border: 1px solid var(--border-color);
+      }
+
+      /* Slider Input styling */
+      .slider-input {
+        width: 100%;
+        background-color: var(--bg-main);
+        -webkit-appearance: none;
+        appearance: none;
+        height: 6px;
+        border-radius: 3px;
+        outline: none;
+      }
+
+      .slider-input::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: var(--accent-blue);
+        cursor: pointer;
+        box-shadow: 0 0 8px rgba(59, 130, 246, 0.5);
+        transition: transform 0.1s ease;
+      }
+
+      .slider-input::-webkit-slider-thumb:hover {
+        transform: scale(1.15);
+      }
+
+      /* Switches */
+      .switch-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+      }
+
+      .switch-row:last-child {
+        margin-bottom: 0;
+      }
+
+      .switch-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.1rem;
+      }
+
+      .switch-desc {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+      }
+
+      .switch {
+        position: relative;
+        display: inline-block;
+        width: 44px;
+        height: 24px;
+      }
+
+      .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+
+      .slider-toggle {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: var(--bg-input);
+        transition: .3s;
+        border-radius: 24px;
+        border: 1px solid var(--border-color);
+      }
+
+      .slider-toggle:before {
+        position: absolute;
+        content: "";
+        height: 16px;
+        width: 16px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: .3s;
+        border-radius: 50%;
+      }
+
+      input:checked + .slider-toggle {
+        background-color: var(--accent-emerald);
+        border-color: var(--accent-emerald);
+      }
+
+      input:checked + .slider-toggle:before {
+        transform: translateX(20px);
+      }
+
+      /* Custom Select styling */
+      .select-input {
+        width: 100%;
+        background-color: var(--bg-input);
+        border: 1px solid var(--border-color);
+        color: var(--text-primary);
+        padding: 0.5rem 0.75rem;
+        border-radius: 6px;
+        outline: none;
+        font-family: var(--font-sans);
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: border-color 0.2s;
+      }
+
+      .select-input:focus {
+        border-color: var(--accent-blue);
+      }
+
+      /* Color Picker styling */
+      .color-picker-container {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-top: 0.5rem;
+      }
+
+      .color-input {
+        -webkit-appearance: none;
+        appearance: none;
+        border: none;
+        width: 32px;
+        height: 32px;
+        border-radius: 6px;
+        cursor: pointer;
+        background: none;
+      }
+
+      .color-input::-webkit-color-swatch-wrapper {
+        padding: 0;
+      }
+
+      .color-input::-webkit-color-swatch {
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+      }
+
+      /* File Inputs buttons styling */
+      .upload-btn-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+        margin-bottom: 0.5rem;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        background-color: var(--bg-input);
+        color: var(--text-primary);
+        border: 1px solid var(--border-color);
+        padding: 0.6rem 1rem;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        outline: none;
+      }
+
+      .btn:hover {
+        background-color: var(--bg-input-hover);
+        border-color: var(--text-secondary);
+      }
+
+      .btn-primary {
+        background-color: var(--accent-emerald);
+        border-color: var(--accent-emerald);
+        color: white;
+      }
+
+      .btn-primary:hover {
+        background-color: var(--accent-emerald-hover);
+        border-color: var(--accent-emerald-hover);
+      }
+
+      .btn-secondary {
+        background-color: var(--accent-blue);
+        border-color: var(--accent-blue);
+        color: white;
+      }
+
+      .btn-secondary:hover {
+        background-color: var(--accent-blue-hover);
+        border-color: var(--accent-blue-hover);
+      }
+
+      .btn-danger {
+        background-color: var(--accent-rose);
+        border-color: var(--accent-rose);
+        color: white;
+      }
+
+      .btn-danger:hover {
+        background-color: var(--accent-rose-hover);
+        border-color: var(--accent-rose-hover);
+      }
+
+      .btn:disabled {
+        background-color: var(--bg-input);
+        border-color: var(--border-color);
+        color: var(--text-muted);
+        cursor: not-allowed;
+        box-shadow: none;
+        opacity: 0.6;
+      }
+
+      /* Central Workspace */
+      .workspace {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        background-color: var(--bg-main);
+        padding: 1.5rem;
+        gap: 1.25rem;
+      }
+
+      /* Drag & Drop Zone */
+      .dropzone {
+        border: 2px dashed var(--border-color);
+        background-color: var(--bg-panel);
+        border-radius: 12px;
+        padding: 2rem;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.25s ease;
+        flex-shrink: 0;
+        position: relative;
+        min-height: 150px;
+      }
+
+      .dropzone.dragover {
+        border-color: var(--accent-blue);
+        background-color: rgba(59, 130, 246, 0.05);
+        box-shadow: 0 0 16px rgba(59, 130, 246, 0.1) inset;
+      }
+
+      .dropzone-icon {
+        color: var(--text-secondary);
+        margin-bottom: 0.75rem;
+        transition: transform 0.2s;
+      }
+
+      .dropzone:hover .dropzone-icon {
+        transform: translateY(-4px);
+        color: var(--accent-blue);
+      }
+
+      .dropzone-text {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 0.25rem;
+      }
+
+      .dropzone-subtext {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+      }
+
+      /* Active Processing Progress */
+      .progress-panel {
+        background-color: var(--bg-panel);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        padding: 1.25rem;
+        flex-shrink: 0;
+      }
+
+      .progress-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.75rem;
+      }
+
+      .progress-status {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text-primary);
+      }
+
+      .progress-stats-row {
+        display: flex;
+        gap: 1.5rem;
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+      }
+
+      .progress-stats-item strong {
+        color: var(--text-primary);
+        font-family: var(--font-mono);
+      }
+
+      .progress-bar-bg {
+        background-color: var(--bg-main);
+        border-radius: 6px;
+        height: 12px;
+        width: 100%;
+        overflow: hidden;
+        border: 1px solid var(--border-color);
+        margin-bottom: 0.5rem;
+      }
+
+      .progress-bar-fill {
+        background: linear-gradient(to right, var(--accent-blue), var(--accent-emerald));
+        height: 100%;
+        width: 0%;
+        transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .progress-bar-fill::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(
+          90deg,
+          rgba(255,255,255,0) 0%,
+          rgba(255,255,255,0.15) 50%,
+          rgba(255,255,255,0) 100-percent
+        );
+        animation: shimmer 1.5s infinite;
+      }
+
+      @keyframes shimmer {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+      }
+
+      .progress-file-info {
+        font-size: 0.75rem;
+        font-family: var(--font-mono);
+        color: var(--text-secondary);
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        overflow: hidden;
+      }
+
+      /* Main Dynamic Split Layout */
+      .dashboard-body {
+        display: grid;
+        grid-template-columns: 1fr 1.1fr;
+        gap: 1.25rem;
+        flex: 1;
+        overflow: hidden;
+      }
+
+      /* Left Side: File List Container */
+      .file-list-container {
+        background-color: var(--bg-panel);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .panel-header {
+        padding: 0.85rem 1.25rem;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background-color: rgba(21, 29, 48, 0.5);
+      }
+
+      .panel-title {
+        font-size: 0.85rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .panel-badge {
+        font-size: 0.7rem;
+        background-color: var(--bg-input);
+        padding: 0.15rem 0.5rem;
+        border-radius: 12px;
+        font-family: var(--font-mono);
+        border: 1px solid var(--border-color);
+      }
+
+      .file-table-wrapper {
+        flex: 1;
+        overflow-y: auto;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+        font-size: 0.8rem;
+      }
+
+      th {
+        position: sticky;
+        top: 0;
+        background-color: var(--bg-panel);
+        color: var(--text-secondary);
+        font-weight: 600;
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid var(--border-color);
+        z-index: 2;
+      }
+
+      td {
+        padding: 0.65rem 1rem;
+        border-bottom: 1px dashed var(--border-color);
+        color: var(--text-primary);
+        vertical-align: middle;
+      }
+
+      tr.active-row td {
+        background-color: rgba(59, 130, 246, 0.05);
+      }
+
+      tr.selected-row td {
+        background-color: rgba(16, 185, 129, 0.05);
+      }
+
+      tr:hover td {
+        background-color: rgba(255, 255, 255, 0.02);
+        cursor: pointer;
+      }
+
+      /* Badges status */
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.15rem 0.4rem;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+      }
+
+      .badge-pending {
+        background-color: rgba(100, 116, 139, 0.15);
+        color: var(--text-secondary);
+        border: 1px solid rgba(100, 116, 139, 0.3);
+      }
+
+      .badge-processing {
+        background-color: rgba(59, 130, 246, 0.15);
+        color: var(--accent-blue);
+        border: 1px solid rgba(59, 130, 246, 0.3);
+      }
+
+      .badge-success {
+        background-color: rgba(16, 185, 129, 0.15);
+        color: var(--accent-emerald);
+        border: 1px solid rgba(16, 185, 129, 0.3);
+      }
+
+      .badge-failed {
+        background-color: rgba(244, 63, 94, 0.15);
+        color: var(--accent-rose);
+        border: 1px solid rgba(244, 63, 94, 0.3);
+      }
+
+      /* Savings indicator */
+      .savings-indicator {
+        font-size: 0.75rem;
+        color: var(--accent-emerald);
+        font-weight: 600;
+        font-family: var(--font-mono);
+      }
+
+      /* Empty States */
+      .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        color: var(--text-muted);
+        text-align: center;
+        padding: 2rem;
+      }
+
+      .empty-state-icon {
+        margin-bottom: 0.75rem;
+        opacity: 0.5;
+      }
+
+      /* Right Side: Interactive Preview / Inspector Panel */
+      .preview-container {
+        background-color: var(--bg-panel);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .preview-workspace {
+        flex: 1;
+        display: grid;
+        grid-template-rows: 1fr auto;
+        overflow: hidden;
+      }
+
+      .preview-stage {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1px;
+        background-color: var(--border-color);
+        overflow: hidden;
+      }
+
+      .preview-box {
+        background-color: var(--bg-main);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        position: relative;
+      }
+
+      .preview-box-title {
+        position: absolute;
+        top: 0.75rem;
+        left: 0.75rem;
+        z-index: 5;
+        background-color: rgba(9, 9, 11, 0.75);
+        border: 1px solid var(--border-color);
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        backdrop-filter: blur(4px);
+      }
+
+      /* Checkerboard transparent background styling */
+      .checkerboard-bg {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+        overflow: auto;
+        background-image: 
+          linear-gradient(45deg, #121214 25%, transparent 25%), 
+          linear-gradient(-45deg, #121214 25%, transparent 25%), 
+          linear-gradient(45deg, transparent 75%, #121214 75%), 
+          linear-gradient(-45deg, transparent 75%, #121214 75%);
+        background-size: 20px 20px;
+        background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        position: relative;
+      }
+
+      .preview-image-wrapper {
+        position: relative;
+        max-width: 100%;
+        max-height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .preview-canvas {
+        max-width: 100%;
+        max-height: 320px;
+        object-fit: contain;
+        display: block;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+      }
+
+      /* Preview Meta details */
+      .preview-meta-row {
+        padding: 0.75rem 1.25rem;
+        border-top: 1px solid var(--border-color);
+        background-color: rgba(24, 24, 27, 0.5);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-shrink: 0;
+      }
+
+      .preview-meta-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.15rem;
+      }
+
+      .preview-meta-label {
+        font-size: 0.65rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .preview-meta-val {
+        font-size: 0.85rem;
+        font-weight: 600;
+        font-family: var(--font-mono);
+        color: var(--text-primary);
+      }
+
+      .preview-meta-val.green {
+        color: var(--accent-emerald);
+      }
+
+      /* Console Activity Log */
+      .console-panel {
+        background-color: var(--bg-panel);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        height: 140px;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        flex-shrink: 0;
+      }
+
+      .console-output {
+        flex: 1;
+        overflow-y: auto;
+        padding: 0.75rem 1.25rem;
+        font-family: var(--font-mono);
+        font-size: 0.75rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+      }
+
+      .log-entry {
+        display: flex;
+        gap: 0.75rem;
+        line-height: 1.4;
+      }
+
+      .log-timestamp {
+        color: var(--text-muted);
+        flex-shrink: 0;
+      }
+
+      .log-text {
+        white-space: pre-wrap;
+        word-break: break-all;
+      }
+
+      .log-info { color: var(--text-secondary); }
+      .log-success { color: var(--accent-emerald); }
+      .log-warning { color: var(--accent-amber); }
+      .log-error { color: var(--accent-rose); }
+
+      /* Loader Spinner Icon */
+      .spinner {
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+
+      /* Tooltip */
+      .tooltip {
+        position: relative;
+        display: inline-block;
+      }
+
+      .tooltip .tooltiptext {
+        visibility: hidden;
+        width: 200px;
+        background-color: #000;
+        color: #fff;
+        text-align: center;
+        border-radius: 6px;
+        padding: 0.5rem;
+        position: absolute;
+        z-index: 10;
+        bottom: 125%;
+        left: 50%;
+        transform: translateX(-50%);
+        opacity: 0;
+        transition: opacity 0.2s;
+        font-size: 0.75rem;
+        font-weight: normal;
+        pointer-events: none;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        border: 1px solid var(--border-color);
+      }
+
+      .tooltip:hover .tooltiptext {
+        visibility: visible;
+        opacity: 1;
+      }
+
+      /* Notification Toast */
+      .toast {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        background-color: var(--bg-panel);
+        border: 1.5px solid var(--accent-emerald);
+        padding: 1rem 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        transform: translateY(150%);
+        transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        z-index: 100;
+      }
+
+      .toast.show {
+        transform: translateY(0);
+      }
+
+      .toast-icon {
+        color: var(--accent-emerald);
+      }
+
+      .toast-title {
+        font-weight: 600;
+        font-size: 0.85rem;
+        margin-bottom: 0.15rem;
+      }
+
+      .toast-desc {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+      }
+    </style>
+  </head>
+  <body>
+
+    <!-- ========================================== -->
+    <!--                   HEADER                   -->
+    <!-- ========================================== -->
+    <header>
+      <div class="header-title-container">
+        <div class="header-logo" id="logo">
+          <i data-lucide="scissors" style="width: 20px; height: 20px;"></i>
+        </div>
+        <div>
+          <h1>Trimify</h1>
+          <p>Bulk Transparent PNG Trim &amp; Crop Canvas Engine</p>
+        </div>
+      </div>
+      <div class="header-stats">
+        <div class="header-stat-item">
+          <div class="header-stat-label">File Diproses</div>
+          <div class="header-stat-value" id="stat-processed-count">0 / 0</div>
+        </div>
+        <div class="header-stat-item">
+          <div class="header-stat-label">Total Penyimpanan Dihemat</div>
+          <div class="header-stat-value" id="stat-saved-space">0.00 KB (0%)</div>
+        </div>
+      </div>
+    </header>
+
+    <!-- ========================================== -->
+    <!--               MAIN WORKSPACE               -->
+    <!-- ========================================== -->
+    <div class="main-container">
+      
+      <!-- SIDEBAR SETTINGS -->
+      <aside class="sidebar">
+        
+        <!-- File Input & Direct Selection Section -->
+        <div class="sidebar-section">
+          <div class="section-title">
+            <i data-lucide="folder-open" style="width: 14px; height: 14px;"></i>
+            Input Sumber File
+          </div>
+          <div class="upload-btn-container">
+            <button class="btn" onclick="document.getElementById('file-input-files').click()">
+              <i data-lucide="file-image" style="width: 14px; height: 14px;"></i>
+              Pilih File
+            </button>
+            <button class="btn" onclick="document.getElementById('file-input-folder').click()">
+              <i data-lucide="folder-archive" style="width: 14px; height: 14px;"></i>
+              Pilih Folder
+            </button>
+          </div>
+          <!-- Hidden Inputs -->
+          <input type="file" id="file-input-files" multiple accept="image/png" style="display: none;">
+          <input type="file" id="file-input-folder" webkitdirectory directory multiple style="display: none;">
+          
+          <div style="font-size: 0.7rem; color: var(--text-muted); text-align: center; margin-top: 0.5rem;">
+            Mendukung selection file individual atau seluruh direktori folder sekaligus.
+          </div>
+        </div>
+
+        <!-- Parameters Settings Section -->
+        <div class="sidebar-section">
+          <div class="section-title">
+            <i data-lucide="sliders-horizontal" style="width: 14px; height: 14px;"></i>
+            Parameter Crop
+          </div>
+          
+          <!-- Alpha Threshold -->
+          <div class="setting-group">
+            <div class="setting-label-row">
+              <label class="setting-label tooltip">
+                Alpha Threshold
+                <i data-lucide="help-circle" style="width: 12px; height: 12px; display: inline; vertical-align: middle;"></i>
+                <span class="tooltiptext">Batas nilai transparansi pixel (0-255). Pixel dengan nilai alpha &lt; threshold akan dianggap transparan sepenuhnya.</span>
+              </label>
+              <span class="setting-value" id="val-threshold">1</span>
+            </div>
+            <input type="range" id="input-threshold" class="slider-input" min="0" max="255" value="1">
+          </div>
+
+          <!-- Ignore Noise -->
+          <div class="setting-group">
+            <div class="setting-label-row">
+              <label class="setting-label tooltip">
+                Ignore Small Noise
+                <i data-lucide="help-circle" style="width: 12px; height: 12px; display: inline; vertical-align: middle;"></i>
+                <span class="tooltiptext">Mengabaikan bintik pixel terisolasi berukuran kecil. Nilai pixel menentukan ukuran area pemeriksaan sekitar pixel.</span>
+              </label>
+              <span class="setting-value" id="val-noise">0 px</span>
+            </div>
+            <input type="range" id="input-noise" class="slider-input" min="0" max="20" value="0">
+          </div>
+
+          <!-- Padding -->
+          <div class="setting-group">
+            <div class="setting-label-row">
+              <label class="setting-label tooltip">
+                Padding Area
+                <i data-lucide="help-circle" style="width: 12px; height: 12px; display: inline; vertical-align: middle;"></i>
+                <span class="tooltiptext">Menambahkan sisa ruang transparan sebesar X pixel di sekeliling objek setelah dipotong.</span>
+              </label>
+              <span class="setting-value" id="val-padding">0 px</span>
+            </div>
+            <input type="range" id="input-padding" class="slider-input" min="0" max="100" value="0">
+          </div>
+        </div>
+
+        <!-- Output Format settings -->
+        <div class="sidebar-section">
+          <div class="section-title">
+            <i data-lucide="settings" style="width: 14px; height: 14px;"></i>
+            Pengaturan Output &amp; File
+          </div>
+
+          <!-- Output Format Select -->
+          <div class="setting-group">
+            <div class="setting-label-row">
+              <label class="setting-label">Format Output</label>
+            </div>
+            <select id="input-format" class="select-input">
+              <option value="png" selected>PNG (Lossless)</option>
+              <option value="webp">WebP (Compressed)</option>
+              <option value="jpeg">JPEG (Solid Background)</option>
+            </select>
+          </div>
+
+          <!-- Compression Slider (For WebP and JPEG quality) -->
+          <div class="setting-group" id="container-quality" style="display: none;">
+            <div class="setting-label-row">
+              <label class="setting-label" id="label-quality">Kualitas Kompresi</label>
+              <span class="setting-value" id="val-quality">90%</span>
+            </div>
+            <input type="range" id="input-quality" class="slider-input" min="10" max="100" value="90">
+          </div>
+
+          <!-- Background Color Picker (For JPEG only) -->
+          <div class="setting-group" id="container-bg-color" style="display: none;">
+            <div class="setting-label-row">
+              <label class="setting-label">Warna Latar Belakang JPEG</label>
+            </div>
+            <div class="color-picker-container">
+              <input type="color" id="input-bg-color" class="color-input" value="#ffffff">
+              <span style="font-size: 0.8rem; font-family: var(--font-mono);" id="val-bg-color">#ffffff</span>
+            </div>
+          </div>
+
+          <!-- Switch Folder Structure -->
+          <div class="switch-row">
+            <div class="switch-info">
+              <span class="setting-label">Pertahankan Struktur Folder</span>
+              <span class="switch-desc">Menjaga hirarki folder di dalam ZIP hasil</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="input-preserve-folder" checked>
+              <span class="slider-toggle"></span>
+            </label>
+          </div>
+
+          <!-- Switch Overwrite Filename -->
+          <div class="switch-row">
+            <div class="switch-info">
+              <span class="setting-label">Simpan dengan Nama Sama</span>
+              <span class="switch-desc">ON: nama tetap / OFF: diakhiri "_cropped"</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="input-overwrite-filename">
+              <span class="slider-toggle"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Queue Action Buttons -->
+        <div class="sidebar-section" style="margin-top: auto;">
+          <div class="section-title">
+            <i data-lucide="play-circle" style="width: 14px; height: 14px;"></i>
+            Tindakan Proses
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+            <!-- Start button -->
+            <button class="btn btn-primary" id="btn-start" style="width: 100%;" disabled>
+              <i data-lucide="play" style="width: 16px; height: 16px;"></i>
+              Mulai Auto Crop
+            </button>
+            
+            <!-- Pause / Resume buttons in a grid row -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+              <button class="btn" id="btn-pause" disabled style="display: none;">
+                <i data-lucide="pause" style="width: 14px; height: 14px;"></i>
+                Pause
+              </button>
+              <button class="btn btn-secondary" id="btn-resume" disabled style="display: none;">
+                <i data-lucide="play" style="width: 14px; height: 14px;"></i>
+                Resume
+              </button>
+              <button class="btn btn-danger" id="btn-cancel" disabled style="display: none;">
+                <i data-lucide="x" style="width: 14px; height: 14px;"></i>
+                Batal
+              </button>
+            </div>
+
+            <!-- Download zip button -->
+            <button class="btn btn-secondary" id="btn-download" style="width: 100%;" disabled>
+              <i data-lucide="download" style="width: 16px; height: 16px;"></i>
+              Download Hasil ZIP
+            </button>
+
+            <!-- Reset / Clear queue button -->
+            <button class="btn btn-danger" id="btn-clear" style="width: 100%; background-color: transparent; border-color: rgba(244, 63, 94, 0.4); color: var(--accent-rose);">
+              <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
+              Hapus Semua Antrean
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      <!-- CENTRAL WORKSPACE -->
+      <main class="workspace">
+        
+        <!-- BIG DRAG & DROP ZONE -->
+        <div class="dropzone" id="dropzone">
+          <div class="dropzone-icon">
+            <i data-lucide="upload-cloud" style="width: 48px; height: 48px;"></i>
+          </div>
+          <div class="dropzone-text">Seret &amp; Taruh File atau Folder PNG di Sini</div>
+          <div class="dropzone-subtext">Semua proses rendering dilakukan 100% lokal tanpa upload ke server mana pun</div>
+        </div>
+
+        <!-- PROGRESS BAR PANEL -->
+        <div class="progress-panel" id="progress-panel" style="display: none;">
+          <div class="progress-header">
+            <div class="progress-status" id="progress-status">Menunggu mulai proses...</div>
+            <div class="progress-stats-row">
+              <div class="progress-stats-item">Waktu Berjalan: <strong id="progress-time-elapsed">00:00</strong></div>
+              <div class="progress-stats-item">Estimasi Sisa: <strong id="progress-time-remaining">~00:00</strong></div>
+            </div>
+          </div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="progress-bar-fill"></div>
+          </div>
+          <div class="progress-file-info" id="progress-file-info">File saat ini: -</div>
+        </div>
+
+        <!-- DASHBOARD GRID: FILE TABLE & PREVIEW -->
+        <div class="dashboard-body">
+          
+          <!-- LEFT PANEL: TABLE -->
+          <div class="file-list-container">
+            <div class="panel-header">
+              <div class="panel-title">
+                <i data-lucide="list" style="width: 14px; height: 14px;"></i>
+                Daftar File Antrean
+              </div>
+              <div class="panel-badge" id="badge-total-files">0 File</div>
+            </div>
+            <div class="file-table-wrapper">
+              <table id="file-table">
+                <thead>
+                  <tr>
+                    <th>Nama File</th>
+                    <th style="width: 80px;">Status</th>
+                    <th style="width: 110px;">Resolusi</th>
+                    <th style="width: 90px;">Ukuran</th>
+                    <th style="width: 70px;">Persen</th>
+                  </tr>
+                </thead>
+                <tbody id="file-table-body">
+                  <!-- JS populated rows -->
+                </tbody>
+              </table>
+              <div class="empty-state" id="table-empty-state">
+                <div class="empty-state-icon">
+                  <i data-lucide="image" style="width: 40px; height: 40px;"></i>
+                </div>
+                <p style="font-size: 0.85rem;">Antrean kosong. Taruh gambar atau gunakan panel samping untuk mulai.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- RIGHT PANEL: PREVIEW -->
+          <div class="preview-container">
+            <div class="panel-header">
+              <div class="panel-title">
+                <i data-lucide="eye" style="width: 14px; height: 14px;"></i>
+                Detektor &amp; Preview Crop
+              </div>
+              <div class="panel-badge" id="preview-filename-badge">Pilih File</div>
+            </div>
+            
+            <div class="preview-workspace" id="preview-workspace">
+              <!-- Grid showing side by side -->
+              <div class="preview-stage">
+                <!-- BEFORE PREVIEW -->
+                <div class="preview-box">
+                  <div class="preview-box-title">Asli (Sebelum)</div>
+                  <div class="checkerboard-bg">
+                    <div class="preview-image-wrapper">
+                      <canvas class="preview-canvas" id="canvas-preview-before"></canvas>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- AFTER PREVIEW -->
+                <div class="preview-box">
+                  <div class="preview-box-title">Hasil (Sesudah)</div>
+                  <div class="checkerboard-bg">
+                    <div class="preview-image-wrapper">
+                      <canvas class="preview-canvas" id="canvas-preview-after"></canvas>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- PREVIEW METADATA BAR -->
+              <div class="preview-meta-row" id="preview-meta-row" style="opacity: 0.6;">
+                <div class="preview-meta-group">
+                  <span class="preview-meta-label">Dimensi Awal</span>
+                  <span class="preview-meta-val" id="preview-dim-before">-</span>
+                </div>
+                <div class="preview-meta-group">
+                  <span class="preview-meta-label">Dimensi Hasil</span>
+                  <span class="preview-meta-val" id="preview-dim-after">-</span>
+                </div>
+                <div class="preview-meta-group">
+                  <span class="preview-meta-label">Ukuran Berkas</span>
+                  <span class="preview-meta-val" id="preview-size-change">-</span>
+                </div>
+                <div class="preview-meta-group" style="text-align: right;">
+                  <span class="preview-meta-label">Area Dipangkas</span>
+                  <span class="preview-meta-val green" id="preview-area-reduced">-</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- BOTTOM CONSOLE PANEL -->
+        <div class="console-panel">
+          <div class="panel-header" style="padding: 0.5rem 1.25rem;">
+            <div class="panel-title" style="font-size: 0.75rem; color: var(--text-secondary);">
+              <i data-lucide="terminal" style="width: 12px; height: 12px;"></i>
+              Log Aktivitas Realtime
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+              <button class="btn" style="padding: 0.2rem 0.5rem; font-size: 0.7rem;" id="btn-copy-log">
+                Copy
+              </button>
+              <button class="btn" style="padding: 0.2rem 0.5rem; font-size: 0.7rem;" id="btn-clear-log">
+                Clear
+              </button>
+            </div>
+          </div>
+          <div class="console-output" id="console-output">
+            <!-- Logging lines populated here -->
+          </div>
+        </div>
+
+      </main>
+    </div>
+
+    <!-- ========================================== -->
+    <!--           SUCCESS TOAST NOTIF              -->
+    <!-- ========================================== -->
+    <div class="toast" id="success-toast">
+      <div class="toast-icon">
+        <i data-lucide="check-circle-2" style="width: 24px; height: 24px;"></i>
+      </div>
+      <div>
+        <div class="toast-title">Kompresi Selesai!</div>
+        <div class="toast-desc" id="toast-message">Seluruh antrean PNG berhasil dipangkas sempurna.</div>
+      </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!--             JAVASCRIPT LOGIC               -->
+    <!-- ========================================== -->
+    <script>
+      // Wait for DOM content to build up
+      document.addEventListener('DOMContentLoaded', () => {
+        lucide.createIcons();
+        initApp();
+      });
+
+      // ==========================================
+      //               UTILITIES
+      // ==========================================
+      const Utils = {
+        // Human-readable size converter
+        formatBytes(bytes, decimals = 2) {
+          if (bytes === 0) return '0 Bytes';
+          const k = 1024;
+          const dm = decimals < 0 ? 0 : decimals;
+          const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+          const i = Math.floor(Math.log(bytes) / Math.log(k));
+          return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+        },
+
+        // Time format converter (mm:ss)
+        formatTime(seconds) {
+          const m = Math.floor(seconds / 60);
+          const s = Math.floor(seconds % 60);
+          return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        },
+
+        // Generate clean file extension based on format type
+        getExt(format) {
+          return format.toLowerCase() === 'jpeg' ? 'jpg' : format.toLowerCase();
+        }
+      };
+
+      // ==========================================
+      //               CORE APP STATE
+      // ==========================================
+      let appState = {
+        status: 'IDLE', // IDLE, PROCESSING, PAUSED, STOPPED
+        files: [],      // Array of File Item objects
+        currentIndex: 0,
+        startTime: null,
+        elapsedInterval: null,
+        elapsedSeconds: 0,
+        selectedPreviewId: null,
+        totalSavingsSize: 0,
+        totalOriginalSize: 0,
+        totalCroppedSize: 0,
+        zipBlob: null,
+        activeProcessPromise: null,
+        pauseResolver: null
+      };
+
+      // ==========================================
+      //              CROP ENGINE
+      // ==========================================
+      const CropEngine = {
+        // Check if an active pixel is part of small noise
+        isNoise(x, y, data, width, height, threshold, noiseThreshold) {
+          if (noiseThreshold <= 0) return false;
+          
+          let activeCount = 0;
+          // Radius scan based on noise ignore parameter
+          const radius = Math.min(3, Math.ceil(noiseThreshold / 2));
+          
+          for (let dy = -radius; dy <= radius; dy++) {
+            for (let dx = -radius; dx <= radius; dx++) {
+              const nx = x + dx;
+              const ny = y + dy;
+              if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                const idx = (ny * width + nx) * 4 + 3; // Alpha index
+                if (data[idx] >= threshold) {
+                  activeCount++;
+                  if (activeCount >= noiseThreshold) {
+                    return false; // Valid signal, not a tiny noise
+                  }
+                }
+              }
+            }
+          }
+          return true; // Single island of noise
+        },
+
+        // Fast recursive boundary scanner with early termination
+        findBoundaries(width, height, data, threshold, noiseThreshold) {
+          let top = -1;
+          let bottom = -1;
+          let left = -1;
+          let right = -1;
+
+          // Scan Top
+          for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+              const idx = (y * width + x) * 4 + 3;
+              if (data[idx] >= threshold) {
+                if (noiseThreshold > 0 && this.isNoise(x, y, data, width, height, threshold, noiseThreshold)) {
+                  continue;
+                }
+                top = y;
+                break;
+              }
+            }
+            if (top !== -1) break;
+          }
+
+          if (top === -1) {
+            return null; // Empty transparent canvas
+          }
+
+          // Scan Bottom
+          for (let y = height - 1; y >= top; y--) {
+            for (let x = 0; x < width; x++) {
+              const idx = (y * width + x) * 4 + 3;
+              if (data[idx] >= threshold) {
+                if (noiseThreshold > 0 && this.isNoise(x, y, data, width, height, threshold, noiseThreshold)) {
+                  continue;
+                }
+                bottom = y;
+                break;
+              }
+            }
+            if (bottom !== -1) break;
+          }
+
+          if (bottom === -1) bottom = top;
+
+          // Scan Left
+          for (let x = 0; x < width; x++) {
+            for (let y = top; y <= bottom; y++) {
+              const idx = (y * width + x) * 4 + 3;
+              if (data[idx] >= threshold) {
+                if (noiseThreshold > 0 && this.isNoise(x, y, data, width, height, threshold, noiseThreshold)) {
+                  continue;
+                }
+                left = x;
+                break;
+              }
+            }
+            if (left !== -1) break;
+          }
+
+          // Scan Right
+          for (let x = width - 1; x >= (left !== -1 ? left : 0); x--) {
+            for (let y = top; y <= bottom; y++) {
+              const idx = (y * width + x) * 4 + 3;
+              if (data[idx] >= threshold) {
+                if (noiseThreshold > 0 && this.isNoise(x, y, data, width, height, threshold, noiseThreshold)) {
+                  continue;
+                }
+                right = x;
+                break;
+              }
+            }
+            if (right !== -1) break;
+          }
+
+          if (left === -1) left = 0;
+          if (right === -1) right = width - 1;
+
+          return { top, bottom, left, right };
+        },
+
+        // Core processing runner for a single PNG file
+        async processSingleFile(fileItem, settings) {
+          return new Promise(async (resolve, reject) => {
+            try {
+              // Decode using modern createImageBitmap for high speed & background parsing
+              const imgBitmap = await createImageBitmap(fileItem.file);
+              const width = imgBitmap.width;
+              const height = imgBitmap.height;
+
+              // Check if browser supports OffscreenCanvas
+              let canvas, ctx;
+              if (window.OffscreenCanvas) {
+                canvas = new OffscreenCanvas(width, height);
+                ctx = canvas.getContext('2d');
+              } else {
+                canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                ctx = canvas.getContext('2d');
+              }
+
+              ctx.drawImage(imgBitmap, 0, 0);
+              const imgData = ctx.getImageData(0, 0, width, height);
+              const data = imgData.data;
+
+              // Get Crop boundaries
+              const bounds = this.findBoundaries(width, height, data, settings.threshold, settings.noise);
+              
+              let finalCanvas, finalCtx;
+              let targetWidth, targetHeight;
+              let cropX, cropY, cropW, cropH;
+
+              if (!bounds) {
+                // Entire canvas is transparent or noise. We'll output a 1x1 empty pixel canvas
+                targetWidth = 1;
+                targetHeight = 1;
+                cropX = 0; cropY = 0; cropW = 1; cropH = 1;
+              } else {
+                // Expand with padding
+                const pad = settings.padding;
+                cropX = Math.max(0, bounds.left - pad);
+                cropY = Math.max(0, bounds.top - pad);
+                
+                const cropRight = Math.min(width - 1, bounds.right + pad);
+                const cropBottom = Math.min(height - 1, bounds.bottom + pad);
+                
+                cropW = cropRight - cropX + 1;
+                cropH = cropBottom - cropY + 1;
+                
+                targetWidth = cropW;
+                targetHeight = cropH;
+              }
+
+              // Build output cropped canvas
+              if (window.OffscreenCanvas) {
+                finalCanvas = new OffscreenCanvas(targetWidth, targetHeight);
+                finalCtx = finalCanvas.getContext('2d');
+              } else {
+                finalCanvas = document.createElement('canvas');
+                finalCanvas.width = targetWidth;
+                finalCanvas.height = targetHeight;
+                finalCtx = finalCanvas.getContext('2d');
+              }
+
+              // Handle formatting background
+              if (settings.format === 'jpeg') {
+                finalCtx.fillStyle = settings.bgColor;
+                finalCtx.fillRect(0, 0, targetWidth, targetHeight);
+              }
+
+              // Draw cropped slice
+              if (bounds) {
+                finalCtx.drawImage(imgBitmap, cropX, cropY, cropW, cropH, 0, 0, targetWidth, targetHeight);
+              }
+
+              // Extract Blob based on requested settings format
+              let outBlobType = 'image/png';
+              let outQuality = undefined;
+
+              if (settings.format === 'webp') {
+                outBlobType = 'image/webp';
+                outQuality = settings.quality;
+              } else if (settings.format === 'jpeg') {
+                outBlobType = 'image/jpeg';
+                outQuality = settings.quality;
+              }
+
+              // Standard toBlob conversion
+              const retrieveBlob = async (c) => {
+                if (c.toBlob) {
+                  return new Promise(res => c.toBlob(res, outBlobType, outQuality));
+                } else if (c.convertToBlob) {
+                  return c.convertToBlob({ type: outBlobType, quality: outQuality });
+                }
+              };
+
+              const outBlob = await retrieveBlob(finalCanvas);
+
+              // Free memory of original ImageBitmap
+              imgBitmap.close();
+
+              resolve({
+                blob: outBlob,
+                originalWidth: width,
+                originalHeight: height,
+                croppedWidth: targetWidth,
+                croppedHeight: targetHeight,
+                bounds: bounds ? { x: cropX, y: cropY, w: cropW, h: cropH } : { x: 0, y: 0, w: width, h: height }
+              });
+
+            } catch (err) {
+              reject(err);
+            }
+          });
+        }
+      };
+
+      // ==========================================
+      //               APP INIT
+      // ==========================================
+      function initApp() {
+        bindEvents();
+        log('Aplikasi Auto Crop lokal siap digunakan. Silakan taruh file Anda.');
+      }
+
+      // ==========================================
+      //             EVENT BINDING & HANDLERS
+      // ==========================================
+      function bindEvents() {
+        const dropzone = document.getElementById('dropzone');
+        const fileInputFiles = document.getElementById('file-input-files');
+        const fileInputFolder = document.getElementById('file-input-folder');
+        
+        // Drag & drop listeners
+        dropzone.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          dropzone.classList.add('dragover');
+        });
+
+        dropzone.addEventListener('dragleave', () => {
+          dropzone.classList.remove('dragover');
+        });
+
+        dropzone.addEventListener('drop', async (e) => {
+          e.preventDefault();
+          dropzone.classList.remove('dragover');
+          
+          if (e.dataTransfer.items) {
+            log('Mendeteksi item ditaruh, melakukan rekursif scanning folder...', 'info');
+            const files = await readDroppedItems(e.dataTransfer.items);
+            addFilesToQueue(files);
+          } else if (e.dataTransfer.files) {
+            addFilesToQueue(Array.from(e.dataTransfer.files));
+          }
+        });
+
+        // Clicking dropzone triggers direct file select
+        dropzone.addEventListener('click', () => {
+          fileInputFiles.click();
+        });
+
+        // File/Folder Inputs Change triggers
+        fileInputFiles.addEventListener('change', (e) => {
+          if (e.target.files.length > 0) {
+            addFilesToQueue(Array.from(e.target.files));
+            fileInputFiles.value = ''; // Reset
+          }
+        });
+
+        fileInputFolder.addEventListener('change', (e) => {
+          if (e.target.files.length > 0) {
+            const files = Array.from(e.target.files).map(file => {
+              // Ensure we read webkitRelativePath for preservation
+              file.customPath = file.webkitRelativePath || file.name;
+              return file;
+            });
+            addFilesToQueue(files);
+            fileInputFolder.value = ''; // Reset
+          }
+        });
+
+        // Parameters input updates
+        setupSlider('input-threshold', 'val-threshold', '', val => val);
+        setupSlider('input-noise', 'val-noise', ' px', val => val);
+        setupSlider('input-padding', 'val-padding', ' px', val => val);
+        setupSlider('input-quality', 'val-quality', '%', val => val);
+
+        // Quality and BG visibility depending on output format select
+        const formatSelect = document.getElementById('input-format');
+        formatSelect.addEventListener('change', (e) => {
+          const val = e.target.value;
+          const qualityContainer = document.getElementById('container-quality');
+          const bgColorContainer = document.getElementById('container-bg-color');
+          const labelQuality = document.getElementById('label-quality');
+
+          if (val === 'png') {
+            qualityContainer.style.display = 'none';
+            bgColorContainer.style.display = 'none';
+          } else if (val === 'webp') {
+            qualityContainer.style.display = 'block';
+            bgColorContainer.style.display = 'none';
+            labelQuality.textContent = 'Kualitas WebP';
+          } else if (val === 'jpeg') {
+            qualityContainer.style.display = 'block';
+            bgColorContainer.style.display = 'block';
+            labelQuality.textContent = 'Kualitas JPEG';
+          }
+        });
+
+        // Color picker visual update
+        const bgColorInput = document.getElementById('input-bg-color');
+        bgColorInput.addEventListener('input', (e) => {
+          document.getElementById('val-bg-color').textContent = e.target.value;
+        });
+
+        // Process buttons
+        document.getElementById('btn-start').addEventListener('click', startQueueProcessing);
+        document.getElementById('btn-pause').addEventListener('click', pauseQueueProcessing);
+        document.getElementById('btn-resume').addEventListener('click', resumeQueueProcessing);
+        document.getElementById('btn-cancel').addEventListener('click', cancelQueueProcessing);
+        document.getElementById('btn-download').addEventListener('click', downloadZipArchive);
+        document.getElementById('btn-clear').addEventListener('click', clearFilesQueue);
+
+        // Log utilities
+        document.getElementById('btn-copy-log').addEventListener('click', copyConsoleLogs);
+        document.getElementById('btn-clear-log').addEventListener('click', clearConsoleLogs);
+      }
+
+      // Helper function for interactive sliders
+      function setupSlider(inputId, valueId, suffix, transform) {
+        const input = document.getElementById(inputId);
+        const display = document.getElementById(valueId);
+        input.addEventListener('input', (e) => {
+          display.textContent = transform(e.target.value) + suffix;
+        });
+      }
+
+      // Recursively parse files/folders dropped via dataTransfer
+      async function readDroppedItems(dataTransferItemList) {
+        const files = [];
+        const entries = [];
+        
+        for (let i = 0; i < dataTransferItemList.length; i++) {
+          const item = dataTransferItemList[i];
+          if (item.kind === 'file') {
+            const entry = item.webkitGetAsEntry();
+            if (entry) {
+              entries.push(entry);
+            }
+          }
+        }
+
+        const traverseEntry = async (entry, currentPath = '') => {
+          if (entry.isFile) {
+            const file = await new Promise((res, rej) => entry.file(res, rej));
+            // Preserve directory location in customPath
+            file.customPath = currentPath ? `${currentPath}/${file.name}` : file.name;
+            files.push(file);
+          } else if (entry.isDirectory) {
+            const reader = entry.createReader();
+            const readAllEntries = async () => {
+              return new Promise((res) => {
+                const results = [];
+                const readBatch = () => {
+                  reader.readEntries((batch) => {
+                    if (batch.length === 0) {
+                      res(results);
+                    } else {
+                      results.push(...batch);
+                      readBatch();
+                    }
+                  });
+                };
+                readBatch();
+              });
+            };
+            const childEntries = await readAllEntries();
+            for (const child of childEntries) {
+              await traverseEntry(child, currentPath ? `${currentPath}/${entry.name}` : entry.name);
+            }
+          }
+        };
+
+        for (const entry of entries) {
+          await traverseEntry(entry);
+        }
+
+        return files;
+      }
+
+      // ==========================================
+      //            QUEUE DATA ACTIONS
+      // ==========================================
+      function addFilesToQueue(rawFileList) {
+        // We only allow PNG as input source
+        const pngFiles = rawFileList.filter(f => f.name.toLowerCase().endsWith('.png'));
+        const rejectedCount = rawFileList.length - pngFiles.length;
+
+        if (rejectedCount > 0) {
+          log(`Mengabaikan ${rejectedCount} file non-PNG. Trimify hanya menerima format input PNG.`, 'warning');
+        }
+
+        if (pngFiles.length === 0) return;
+
+        pngFiles.forEach(file => {
+          // Check for duplication
+          const isDuplicate = appState.files.some(item => {
+            const p1 = item.relativePath || item.name;
+            const p2 = file.customPath || file.name;
+            return p1 === p2;
+          });
+
+          if (isDuplicate) return;
+
+          const item = {
+            id: 'file-' + Math.random().toString(36).substring(2, 9),
+            file: file,
+            name: file.name,
+            relativePath: file.customPath || file.name,
+            status: 'pending',
+            originalSize: file.size,
+            croppedSize: null,
+            originalWidth: null,
+            originalHeight: null,
+            croppedWidth: null,
+            croppedHeight: null,
+            croppedBlob: null,
+            croppedUrl: null,
+            error: null
+          };
+
+          appState.files.push(item);
+        });
+
+        log(`Berhasil menambahkan ${pngFiles.length} berkas PNG ke dalam antrean.`, 'success');
+        
+        // Refresh UI
+        updateFileListUI();
+        updateGeneralStats();
+        
+        // Enable buttons
+        document.getElementById('btn-start').removeAttribute('disabled');
+        
+        // If there's no selected preview, select this first file
+        if (!appState.selectedPreviewId && appState.files.length > 0) {
+          loadPreviewFile(appState.files[0].id);
+        }
+      }
+
+      function clearFilesQueue() {
+        if (appState.status === 'PROCESSING') {
+          log('Proses sedang berjalan. Batalkan atau pause proses terlebih dahulu sebelum menghapus antrean.', 'warning');
+          return;
+        }
+
+        // Clean up Object URLs for memory
+        appState.files.forEach(item => {
+          if (item.croppedUrl) {
+            URL.revokeObjectURL(item.croppedUrl);
+          }
+        });
+
+        appState.files = [];
+        appState.currentIndex = 0;
+        appState.status = 'IDLE';
+        appState.zipBlob = null;
+        appState.totalOriginalSize = 0;
+        appState.totalCroppedSize = 0;
+        appState.totalSavingsSize = 0;
+        appState.selectedPreviewId = null;
+
+        // Reset elements
+        document.getElementById('file-table-body').innerHTML = '';
+        document.getElementById('table-empty-state').style.display = 'flex';
+        document.getElementById('progress-panel').style.display = 'none';
+        document.getElementById('btn-start').setAttribute('disabled', 'true');
+        document.getElementById('btn-download').setAttribute('disabled', 'true');
+        
+        // Reset preview canvases
+        clearPreviewCanvases();
+
+        updateGeneralStats();
+        log('Seluruh antrean dibersihkan.', 'info');
+      }
+
+      function clearPreviewCanvases() {
+        const before = document.getElementById('canvas-preview-before');
+        const after = document.getElementById('canvas-preview-after');
+        before.getContext('2d').clearRect(0, 0, before.width, before.height);
+        after.getContext('2d').clearRect(0, 0, after.width, after.height);
+        before.width = 0; before.height = 0;
+        after.width = 0; after.height = 0;
+
+        document.getElementById('preview-filename-badge').textContent = 'Pilih File';
+        document.getElementById('preview-dim-before').textContent = '-';
+        document.getElementById('preview-dim-after').textContent = '-';
+        document.getElementById('preview-size-change').textContent = '-';
+        document.getElementById('preview-area-reduced').textContent = '-';
+        document.getElementById('preview-meta-row').style.opacity = '0.6';
+      }
+
+      // ==========================================
+      //             UI RENDER ENGINE
+      // ==========================================
+      function updateFileListUI() {
+        const body = document.getElementById('file-table-body');
+        const emptyState = document.getElementById('table-empty-state');
+
+        if (appState.files.length === 0) {
+          emptyState.style.display = 'flex';
+          body.innerHTML = '';
+          return;
+        }
+
+        emptyState.style.display = 'none';
+        
+        // Keep scroll index intact but rebuild list optimally
+        const rowsHTML = appState.files.map((item, index) => {
+          let statusBadge = '';
+          let resString = '-';
+          let sizeString = Utils.formatBytes(item.originalSize);
+          let savingPerc = '-';
+
+          if (item.status === 'pending') {
+            statusBadge = `<span class="badge badge-pending">Pending</span>`;
+          } else if (item.status === 'processing') {
+            statusBadge = `<span class="badge badge-processing"><i data-lucide="loader-2" class="spinner" style="width:10px; height:10px;"></i> Proses</span>`;
+          } else if (item.status === 'success') {
+            const savings = item.originalSize - item.croppedSize;
+            const savingsPct = item.originalSize > 0 ? Math.round((savings / item.originalSize) * 100) : 0;
+            statusBadge = `<span class="badge badge-success">Selesai</span>`;
+            resString = `<span style="color:var(--text-secondary); font-size:0.75rem;">${item.originalWidth}x${item.originalHeight}</span> &rarr; <strong>${item.croppedWidth}x${item.croppedHeight}</strong>`;
+            sizeString = `<span style="text-decoration:line-through; color:var(--text-muted); font-size:0.7rem;">${Utils.formatBytes(item.originalSize)}</span><br><strong>${Utils.formatBytes(item.croppedSize)}</strong>`;
+            savingPerc = `<span class="savings-indicator">-${savingsPct}%</span>`;
+          } else if (item.status === 'failed') {
+            statusBadge = `<span class="badge badge-failed" title="${item.error || 'Gagal'}">Gagal</span>`;
+          }
+
+          const isSelected = item.id === appState.selectedPreviewId ? 'selected-row' : '';
+          const isActive = item.status === 'processing' ? 'active-row' : '';
+
+          return `
+            <tr class="${isSelected} ${isActive}" onclick="loadPreviewFile('${item.id}')" id="row-${item.id}">
+              <td style="max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${item.relativePath}">
+                ${item.relativePath}
+              </td>
+              <td>${statusBadge}</td>
+              <td style="font-family: var(--font-mono); font-size:0.75rem;">${resString}</td>
+              <td style="font-family: var(--font-mono); font-size:0.75rem;">${sizeString}</td>
+              <td>${savingPerc}</td>
+            </tr>
+          `;
+        }).join('');
+
+        body.innerHTML = rowsHTML;
+        lucide.createIcons(); // Reactivate icons inside badges
+      }
+
+      function updateGeneralStats() {
+        // Count total, success, failed
+        const total = appState.files.length;
+        const processed = appState.files.filter(f => f.status === 'success' || f.status === 'failed').length;
+        
+        document.getElementById('badge-total-files').textContent = `${total} File`;
+        document.getElementById('stat-processed-count').textContent = `${processed} / ${total}`;
+
+        // Calculate storage savings
+        let origSum = 0;
+        let cropSum = 0;
+
+        appState.files.forEach(item => {
+          if (item.status === 'success') {
+            origSum += item.originalSize;
+            cropSum += item.croppedSize;
+          }
+        });
+
+        if (origSum > 0) {
+          const savedBytes = origSum - cropSum;
+          const pct = Math.round((savedBytes / origSum) * 100);
+          document.getElementById('stat-saved-space').textContent = `${Utils.formatBytes(savedBytes)} (-${pct}%)`;
+        } else {
+          document.getElementById('stat-saved-space').textContent = `0.00 KB (0%)`;
+        }
+      }
+
+      // Load specific file details onto the Before/After Preview Canvases
+      async function loadPreviewFile(fileId) {
+        appState.selectedPreviewId = fileId;
+        
+        // Highlight in table
+        document.querySelectorAll('#file-table-body tr').forEach(row => {
+          row.classList.remove('selected-row');
+        });
+        const selectedRow = document.getElementById(`row-${fileId}`);
+        if (selectedRow) selectedRow.classList.add('selected-row');
+
+        const item = appState.files.find(f => f.id === fileId);
+        if (!item) return;
+
+        document.getElementById('preview-filename-badge').textContent = item.name;
+
+        // Obtain Settings state
+        const settings = getSettingsParameters();
+
+        try {
+          const imgBitmap = await createImageBitmap(item.file);
+          const width = imgBitmap.width;
+          const height = imgBitmap.height;
+
+          // Render "Before" canvas with visual crop box overlay
+          const cBefore = document.getElementById('canvas-preview-before');
+          const ctxBefore = cBefore.getContext('2d');
+          cBefore.width = width;
+          cBefore.height = height;
+          ctxBefore.drawImage(imgBitmap, 0, 0);
+
+          // Get Crop predictions
+          let cropData;
+          if (item.status === 'success') {
+            cropData = {
+              originalWidth: item.originalWidth,
+              originalHeight: item.originalHeight,
+              croppedWidth: item.croppedWidth,
+              croppedHeight: item.croppedHeight,
+              bounds: item.bounds
+            };
+          } else {
+            // Predict boundaries live based on slider parameters
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = width;
+            tempCanvas.height = height;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.drawImage(imgBitmap, 0, 0);
+            const data = tempCtx.getImageData(0, 0, width, height).data;
+
+            const bounds = CropEngine.findBoundaries(width, height, data, settings.threshold, settings.noise);
+            if (bounds) {
+              const pad = settings.padding;
+              const cx = Math.max(0, bounds.left - pad);
+              const cy = Math.max(0, bounds.top - pad);
+              const cw = Math.min(width - 1, bounds.right + pad) - cx + 1;
+              const ch = Math.min(height - 1, bounds.bottom + pad) - cy + 1;
+              cropData = {
+                originalWidth: width,
+                originalHeight: height,
+                croppedWidth: cw,
+                croppedHeight: ch,
+                bounds: { x: cx, y: cy, w: cw, h: ch }
+              };
+            }
+          }
+
+          if (cropData && cropData.bounds) {
+            // Draw red dotted border outlining cropping slice
+            ctxBefore.strokeStyle = '#f43f5e';
+            ctxBefore.lineWidth = Math.max(2, Math.floor(width / 300));
+            ctxBefore.setLineDash([8, 6]);
+            ctxBefore.strokeRect(cropData.bounds.x, cropData.bounds.y, cropData.bounds.w, cropData.bounds.h);
+          }
+
+          // Render "After" canvas
+          const cAfter = document.getElementById('canvas-preview-after');
+          const ctxAfter = cAfter.getContext('2d');
+
+          if (item.status === 'success' && item.croppedBlob) {
+            // Render the actual finished cropped file
+            const imgCropped = new Image();
+            imgCropped.src = item.croppedUrl || URL.createObjectURL(item.croppedBlob);
+            if (!item.croppedUrl) item.croppedUrl = imgCropped.src;
+            
+            imgCropped.onload = () => {
+              cAfter.width = imgCropped.width;
+              cAfter.height = imgCropped.height;
+              ctxAfter.drawImage(imgCropped, 0, 0);
+            };
+          } else {
+            // Show preview crop rendering live
+            if (cropData) {
+              cAfter.width = cropData.croppedWidth;
+              cAfter.height = cropData.croppedHeight;
+              
+              if (settings.format === 'jpeg') {
+                ctxAfter.fillStyle = settings.bgColor;
+                ctxAfter.fillRect(0, 0, cropData.croppedWidth, cropData.croppedHeight);
+              }
+              
+              ctxAfter.drawImage(
+                imgBitmap, 
+                cropData.bounds.x, cropData.bounds.y, cropData.bounds.w, cropData.bounds.h, 
+                0, 0, cropData.croppedWidth, cropData.croppedHeight
+              );
+            } else {
+              // Completely transparent
+              cAfter.width = 1;
+              cAfter.height = 1;
+              ctxAfter.clearRect(0, 0, 1, 1);
+            }
+          }
+
+          // Update Meta stats
+          document.getElementById('preview-meta-row').style.opacity = '1';
+          document.getElementById('preview-dim-before').textContent = `${width} x ${height} px`;
+          
+          if (cropData) {
+            document.getElementById('preview-dim-after').textContent = `${cropData.croppedWidth} x ${cropData.croppedHeight} px`;
+            
+            const origArea = width * height;
+            const cropArea = cropData.croppedWidth * cropData.croppedHeight;
+            const areaSaved = origArea - cropArea;
+            const areaSavedPct = Math.round((areaSaved / origArea) * 100);
+            document.getElementById('preview-area-reduced').textContent = `-${areaSavedPct}%`;
+          } else {
+            document.getElementById('preview-dim-after').textContent = '1 x 1 px';
+            document.getElementById('preview-area-reduced').textContent = '-100%';
+          }
+
+          if (item.status === 'success') {
+            document.getElementById('preview-size-change').textContent = `${Utils.formatBytes(item.originalSize)} &rarr; ${Utils.formatBytes(item.croppedSize)}`;
+          } else {
+            document.getElementById('preview-size-change').textContent = `${Utils.formatBytes(item.originalSize)} &rarr; Est. Selesai`;
+          }
+
+          imgBitmap.close(); // Clean up graphics memory
+
+        } catch (err) {
+          log(`Gagal memuat preview untuk ${item.name}: ${err.message}`, 'error');
+        }
+      }
+
+      // Retrieve all configuration values from UI elements
+      function getSettingsParameters() {
+        const threshold = parseInt(document.getElementById('input-threshold').value);
+        const noise = parseInt(document.getElementById('input-noise').value);
+        const padding = parseInt(document.getElementById('input-padding').value);
+        const format = document.getElementById('input-format').value;
+        const qualityVal = parseInt(document.getElementById('input-quality').value);
+        const quality = qualityVal / 100; // float scale 0.0 to 1.0
+        const bgColor = document.getElementById('input-bg-color').value;
+        const preserveFolder = document.getElementById('input-preserve-folder').checked;
+        const overwriteName = document.getElementById('input-overwrite-filename').checked;
+
+        return {
+          threshold,
+          noise,
+          padding,
+          format,
+          quality,
+          bgColor,
+          preserveFolder,
+          overwriteName
+        };
+      }
+
+      // ==========================================
+      //             PROCESS CONTROLLERS
+      // ==========================================
+      async function startQueueProcessing() {
+        if (appState.files.length === 0) return;
+
+        appState.status = 'PROCESSING';
+        appState.startTime = Date.now();
+        appState.elapsedSeconds = 0;
+        
+        // Show progress panel & toggle inputs
+        document.getElementById('progress-panel').style.display = 'block';
+        toggleUIInputsState(true);
+
+        // Reset and establish UI timer
+        document.getElementById('progress-time-elapsed').textContent = '00:00';
+        document.getElementById('progress-time-remaining').textContent = 'Estimating...';
+        
+        if (appState.elapsedInterval) clearInterval(appState.elapsedInterval);
+        appState.elapsedInterval = setInterval(() => {
+          appState.elapsedSeconds++;
+          document.getElementById('progress-time-elapsed').textContent = Utils.formatTime(appState.elapsedSeconds);
+          updateTimeEstimation();
+        }, 1000);
+
+        log(`Memulai auto crop untuk ${appState.files.length} file PNG...`, 'info');
+
+        // Loop execution
+        processNextInQueue();
+      }
+
+      async function processNextInQueue() {
+        if (appState.status === 'STOPPED') {
+          haltQueueProcessing();
+          return;
+        }
+
+        // Check if paused
+        if (appState.status === 'PAUSED') {
+          log('Proses ditunda (PAUSED).', 'warning');
+          await new Promise(resolve => {
+            appState.pauseResolver = resolve;
+          });
+          if (appState.status === 'STOPPED') {
+            haltQueueProcessing();
+            return;
+          }
+        }
+
+        // Find next pending file item
+        const nextItem = appState.files.find(item => item.status === 'pending');
+        
+        if (!nextItem) {
+          // Finished entire queue loop
+          finishQueueProcessing();
+          return;
+        }
+
+        appState.currentIndex = appState.files.indexOf(nextItem);
+        nextItem.status = 'processing';
+        
+        // Update list visually & focus progress
+        updateFileListUI();
+        document.getElementById('progress-status').textContent = `Memproses: ${appState.currentIndex + 1} dari ${appState.files.length} file...`;
+        document.getElementById('progress-file-info').textContent = `File: ${nextItem.relativePath}`;
+        
+        const fillPercent = ((appState.currentIndex) / appState.files.length) * 100;
+        document.getElementById('progress-bar-fill').style.width = `${fillPercent}%`;
+
+        // Highlight active row in table and load preview
+        loadPreviewFile(nextItem.id);
+
+        const settings = getSettingsParameters();
+
+        // Run crop using Canvas engine
+        try {
+          const result = await CropEngine.processSingleFile(nextItem, settings);
+          
+          nextItem.status = 'success';
+          nextItem.croppedBlob = result.blob;
+          nextItem.croppedSize = result.blob.size;
+          nextItem.originalWidth = result.originalWidth;
+          nextItem.originalHeight = result.originalHeight;
+          nextItem.croppedWidth = result.croppedWidth;
+          nextItem.croppedHeight = result.croppedHeight;
+          nextItem.bounds = result.bounds;
+
+          log(`Sukses memotong ${nextItem.name}: ${result.originalWidth}x${result.originalHeight}px &rarr; ${result.croppedWidth}x${result.croppedHeight}px (${Utils.formatBytes(nextItem.originalSize)} &rarr; ${Utils.formatBytes(nextItem.croppedSize)})`, 'success');
+
+        } catch (err) {
+          nextItem.status = 'failed';
+          nextItem.error = err.message;
+          log(`Gagal memproses ${nextItem.name}: ${err.message}`, 'error');
+        }
+
+        // Update stats & refresh table
+        updateFileListUI();
+        updateGeneralStats();
+
+        // Introduce brief yield to prevent blocking UI thread, allowing rendering
+        setTimeout(processNextInQueue, 30);
+      }
+
+      function pauseQueueProcessing() {
+        if (appState.status !== 'PROCESSING') return;
+        appState.status = 'PAUSED';
+        document.getElementById('btn-pause').style.display = 'none';
+        document.getElementById('btn-resume').style.display = 'inline-flex';
+        log('Meminta penundaan proses...', 'warning');
+      }
+
+      function resumeQueueProcessing() {
+        if (appState.status !== 'PAUSED') return;
+        appState.status = 'PROCESSING';
+        document.getElementById('btn-pause').style.display = 'inline-flex';
+        document.getElementById('btn-resume').style.display = 'none';
+        log('Melanjutkan proses crop...', 'info');
+        
+        if (appState.pauseResolver) {
+          appState.pauseResolver();
+          appState.pauseResolver = null;
+        }
+      }
+
+      function cancelQueueProcessing() {
+        if (appState.status === 'IDLE') return;
+        
+        if (confirm('Apakah Anda yakin ingin membatalkan proses cropping?')) {
+          appState.status = 'STOPPED';
+          log('Proses dibatalkan oleh pengguna.', 'warning');
+          
+          if (appState.pauseResolver) {
+            appState.pauseResolver();
+            appState.pauseResolver = null;
+          }
+        }
+      }
+
+      function haltQueueProcessing() {
+        clearInterval(appState.elapsedInterval);
+        appState.status = 'IDLE';
+        
+        // Re-enable settings inputs
+        toggleUIInputsState(false);
+        document.getElementById('progress-status').textContent = 'Proses dibatalkan.';
+        log('Proses selesai dihentikan.', 'warning');
+      }
+
+      function finishQueueProcessing() {
+        clearInterval(appState.elapsedInterval);
+        appState.status = 'IDLE';
+
+        document.getElementById('progress-bar-fill').style.width = '100%';
+        document.getElementById('progress-status').textContent = 'Seluruh antrean selesai diproses!';
+        document.getElementById('progress-file-info').textContent = `Total file: ${appState.files.length}`;
+        document.getElementById('progress-time-remaining').textContent = 'Selesai';
+
+        log(`Seluruh proses auto-crop telah berhasil diselesaikan!`, 'success');
+
+        // Show toast notification
+        showToastNotification();
+
+        // Build ZIP immediately or enable download
+        document.getElementById('btn-download').removeAttribute('disabled');
+        toggleUIInputsState(false);
+      }
+
+      function updateTimeEstimation() {
+        const completed = appState.files.filter(f => f.status === 'success' || f.status === 'failed').length;
+        if (completed === 0) return;
+
+        const remaining = appState.files.length - completed;
+        if (remaining === 0) {
+          document.getElementById('progress-time-remaining').textContent = '00:00';
+          return;
+        }
+
+        const avgTimePerFile = appState.elapsedSeconds / completed;
+        const estRemainingSec = Math.round(remaining * avgTimePerFile);
+
+        document.getElementById('progress-time-remaining').textContent = '~' + Utils.formatTime(estRemainingSec);
+      }
+
+      // Toggle disabled states of various side settings during active compression
+      function toggleUIInputsState(processing) {
+        const ids = [
+          'input-threshold', 'input-noise', 'input-padding', 'input-format',
+          'input-quality', 'input-bg-color', 'input-preserve-folder', 'input-overwrite-filename',
+          'file-input-files', 'file-input-folder', 'btn-clear'
+        ];
+
+        ids.forEach(id => {
+          const elem = document.getElementById(id);
+          if (elem) {
+            if (processing) {
+              elem.setAttribute('disabled', 'true');
+            } else {
+              elem.removeAttribute('disabled');
+            }
+          }
+        });
+
+        // Toggle custom buttons selection triggers inside sidebar
+        const uploadBtns = document.querySelectorAll('.upload-btn-container button');
+        uploadBtns.forEach(btn => {
+          if (processing) {
+            btn.setAttribute('disabled', 'true');
+          } else {
+            btn.removeAttribute('disabled');
+          }
+        });
+
+        // Swap start vs pause cancel button states
+        if (processing) {
+          document.getElementById('btn-start').style.display = 'none';
+          document.getElementById('btn-pause').style.display = 'inline-flex';
+          document.getElementById('btn-resume').style.display = 'none';
+          document.getElementById('btn-cancel').style.display = 'inline-flex';
+          
+          document.getElementById('btn-pause').removeAttribute('disabled');
+          document.getElementById('btn-cancel').removeAttribute('disabled');
+          document.getElementById('btn-download').setAttribute('disabled', 'true');
+        } else {
+          document.getElementById('btn-start').style.display = 'block';
+          document.getElementById('btn-pause').style.display = 'none';
+          document.getElementById('btn-resume').style.display = 'none';
+          document.getElementById('btn-cancel').style.display = 'none';
+          
+          document.getElementById('btn-start').removeAttribute('disabled');
+          
+          // Only enable download if we have successful output items
+          const hasSuccess = appState.files.some(f => f.status === 'success');
+          if (hasSuccess) {
+            document.getElementById('btn-download').removeAttribute('disabled');
+          }
+        }
+      }
+
+      // ==========================================
+      //             ZIP EXPORTER
+      // ==========================================
+      async function downloadZipArchive() {
+        const successFiles = appState.files.filter(f => f.status === 'success' && f.croppedBlob);
+        if (successFiles.length === 0) {
+          alert('Tidak ada file hasil crop yang berhasil diekspor.');
+          return;
+        }
+
+        log('Sedang menyiapkan file ZIP hasil cropping...', 'info');
+        const zipBtn = document.getElementById('btn-download');
+        const origContent = zipBtn.innerHTML;
+        zipBtn.setAttribute('disabled', 'true');
+        zipBtn.innerHTML = `<i data-lucide="loader-2" class="spinner" style="width:16px; height:16px;"></i> Membuat ZIP...`;
+        lucide.createIcons();
+
+        try {
+          const zip = new JSZip();
+          const settings = getSettingsParameters();
+          const usedPaths = new Set();
+
+          for (const item of successFiles) {
+            let relativePath = item.name;
+
+            // Generate clean target filename extension based on export settings format
+            const ext = Utils.getExt(settings.format);
+            const baseNameNoExt = item.name.substring(0, item.name.lastIndexOf('.')) || item.name;
+            const targetName = settings.overwriteName ? `${baseNameNoExt}.${ext}` : `${baseNameNoExt}_cropped.${ext}`;
+
+            if (settings.preserveFolder && item.relativePath) {
+              // Extract original folder path hierarchy
+              const idx = item.relativePath.lastIndexOf('/');
+              if (idx !== -1) {
+                const folderPath = item.relativePath.substring(0, idx);
+                relativePath = `${folderPath}/${targetName}`;
+              } else {
+                relativePath = targetName;
+              }
+            } else {
+              relativePath = targetName;
+            }
+
+            // Uniqueness handler inside ZIP to prevent loss of duplicate names
+            let finalZipPath = relativePath;
+            let counter = 1;
+            while (usedPaths.has(finalZipPath.toLowerCase())) {
+              const dotIdx = relativePath.lastIndexOf('.');
+              if (dotIdx !== -1) {
+                const pBase = relativePath.substring(0, dotIdx);
+                const pExt = relativePath.substring(dotIdx);
+                finalZipPath = `${pBase} (${counter})${pExt}`;
+              } else {
+                finalZipPath = `${relativePath} (${counter})`;
+              }
+              counter++;
+            }
+            usedPaths.add(finalZipPath.toLowerCase());
+
+            // Append blob file to zip tree
+            zip.file(finalZipPath, item.croppedBlob);
+          }
+
+          // Generate file download trigger
+          const content = await zip.generateAsync({ type: 'blob' });
+          saveAs(content, `Trimify_Cropped_Archive_${Date.now()}.zip`);
+          log('Arsip ZIP berhasil diunduh ke sistem Anda!', 'success');
+
+        } catch (err) {
+          log(`Gagal membuat berkas ZIP: ${err.message}`, 'error');
+          alert('Gagal mengekspor ZIP: ' + err.message);
+        } finally {
+          zipBtn.removeAttribute('disabled');
+          zipBtn.innerHTML = origContent;
+          lucide.createIcons();
+        }
+      }
+
+      // ==========================================
+      //             CONSOLE LOGS LOGGER
+      // ==========================================
+      const loggerLines = [];
+      function log(message, type = 'info') {
+        const output = document.getElementById('console-output');
+        const timestamp = new Date().toLocaleTimeString();
+        
+        loggerLines.push({ timestamp, message, type });
+
+        const entry = document.createElement('div');
+        entry.className = `log-entry log-${type}`;
+        entry.innerHTML = `
+          <span class="log-timestamp">[${timestamp}]</span>
+          <span class="log-text">${escapeHTML(message)}</span>
+        `;
+        
+        output.appendChild(entry);
+        
+        // Keep scroll container locked at bottom
+        output.scrollTop = output.scrollHeight;
+      }
+
+      function escapeHTML(str) {
+        return str.replace(/[&<>'"]/g, 
+          tag => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            "'": '&#39;',
+            '"': '&quot;'
+          }[tag] || tag)
+        );
+      }
+
+      function clearConsoleLogs() {
+        document.getElementById('console-output').innerHTML = '';
+        loggerLines.length = 0;
+        log('Konsol aktivitas dibersihkan.', 'info');
+      }
+
+      function copyConsoleLogs() {
+        const textToCopy = loggerLines.map(l => `[${l.timestamp}] [${l.type.toUpperCase()}] ${l.message}`).join('\n');
+        navigator.clipboard.writeText(textToCopy).then(() => {
+          alert('Log berhasil disalin ke clipboard.');
+        }).catch(err => {
+          alert('Gagal menyalin log: ' + err);
+        });
+      }
+
+      function showToastNotification() {
+        const toast = document.getElementById('success-toast');
+        const completedCount = appState.files.filter(f => f.status === 'success').length;
+        
+        document.getElementById('toast-message').textContent = `${completedCount} dari ${appState.files.length} file PNG berhasil dipangkas sempurna.`;
+        
+        toast.classList.add('show');
+        setTimeout(() => {
+          toast.classList.remove('show');
+        }, 5000);
+      }
+
+    </script>
+  </body>
+</html>

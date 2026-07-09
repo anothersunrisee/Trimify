@@ -1,0 +1,6 @@
+{
+  "name": "Trimify - Bulk PNG Crop",
+  "description": "A powerful client-side tool for bulk auto-cropping transparent pixels from PNG files, keeping folder structure and generating a ZIP file.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
