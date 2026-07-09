@@ -1,6 +1,7 @@
 import { useAppStore, FileItem } from '../store/useAppStore';
 import { useDialogStore } from '../store/useDialogStore';
 import { log } from './logger';
+import { updateFileListUI, updateGeneralStats } from '../hooks/useProcessingQueue';
 
 // Queue data actions — identical logic to addFilesToQueue / clearFilesQueue in index.html
 
@@ -125,6 +126,9 @@ export function addFilesToQueue(rawFileList: File[]): void {
 
   document.getElementById('btn-start')?.removeAttribute('disabled');
 
+  updateFileListUI();
+  updateGeneralStats();
+
   // Auto-select first file for preview if nothing selected
   if (!selectedPreviewId) {
     const updatedFiles = useAppStore.getState().files;
@@ -159,13 +163,16 @@ export function clearFilesQueue(): void {
 
       useAppStore.getState().clearFiles();
 
-      document.getElementById('table-empty-state') && (
-        (document.getElementById('table-empty-state') as HTMLElement).style.display = 'flex'
-      );
+      updateFileListUI();
+      updateGeneralStats();
+
       const progressPanel = document.getElementById('progress-panel');
       if (progressPanel) progressPanel.style.display = 'none';
       document.getElementById('btn-start')?.setAttribute('disabled', 'true');
       document.getElementById('btn-download')?.setAttribute('disabled', 'true');
+
+      // Clear preview
+      document.dispatchEvent(new CustomEvent('trimify:preview', { detail: { id: null } }));
 
       log('Daftar antrean file dibersihkan.', 'info');
     },

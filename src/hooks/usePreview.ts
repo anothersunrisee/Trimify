@@ -28,7 +28,24 @@ async function loadPreviewFile(fileId: string) {
   document.getElementById(`row-${fileId}`)?.classList.add('selected-row');
 
   const item = useAppStore.getState().files.find((f) => f.id === fileId);
-  if (!item) return;
+  if (!item) {
+    const badgeEl = document.getElementById('preview-filename-badge');
+    if (badgeEl) badgeEl.textContent = 'Pilih File';
+    
+    const cBefore = document.getElementById('canvas-preview-before') as HTMLCanvasElement;
+    if (cBefore) { cBefore.width = 1; cBefore.height = 1; cBefore.getContext('2d')?.clearRect(0,0,1,1); }
+    const cAfter = document.getElementById('canvas-preview-after') as HTMLCanvasElement;
+    if (cAfter) { cAfter.width = 1; cAfter.height = 1; cAfter.getContext('2d')?.clearRect(0,0,1,1); }
+    
+    const metaRow = document.getElementById('preview-meta-row');
+    if (metaRow) metaRow.style.opacity = '0.6';
+    
+    ['preview-dim-before', 'preview-dim-after', 'preview-size-change', 'preview-area-reduced'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = '-';
+    });
+    return;
+  }
 
   const badgeEl = document.getElementById('preview-filename-badge');
   if (badgeEl) badgeEl.textContent = item.name;

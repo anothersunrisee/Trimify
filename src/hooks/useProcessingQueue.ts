@@ -144,7 +144,7 @@ function toggleUIInputsState(processing: boolean) {
   }
 }
 
-function updateTimeEstimation() {
+export function updateTimeEstimation() {
   const { files, elapsedSeconds } = useAppStore.getState();
   const completed = files.filter((f) => f.status === 'success' || f.status === 'failed').length;
   if (completed === 0) return;
@@ -156,7 +156,7 @@ function updateTimeEstimation() {
   remEl.textContent = '~' + Utils.formatTime(Math.round(remaining * avg));
 }
 
-function updateGeneralStats() {
+export function updateGeneralStats() {
   const { files } = useAppStore.getState();
   const total = files.length;
   const processed = files.filter((f) => f.status === 'success' || f.status === 'failed').length;
@@ -181,7 +181,7 @@ function updateGeneralStats() {
   }
 }
 
-function updateFileListUI() {
+export function updateFileListUI() {
   const { files, selectedPreviewId } = useAppStore.getState();
   const body = document.getElementById('file-table-body');
   const emptyState = document.getElementById('table-empty-state');
