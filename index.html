@@ -1764,6 +1764,57 @@
       </div>
     </div>
 
+    <!-- ========================================== -->
+    <!--            CUSTOM ALERT DIALOG             -->
+    <!-- ========================================== -->
+    <div class="modal-backdrop" id="app-dialog-modal" onclick="if(event.target===this) closeAppDialog()">
+      <div class="modal-card" style="max-width: 360px;">
+        <button type="button" class="modal-close-btn" onclick="closeAppDialog()" aria-label="Tutup modal">
+          <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+        </button>
+
+        <div style="width: 42px; height: 42px; border-radius: 50%; background-color: var(--color-bg-secondary); border: 1px solid var(--color-border-subtle); display: flex; align-items: center; justify-content: center; margin-bottom: 8px;">
+          <i id="app-dialog-icon" data-lucide="info" style="width: 20px; height: 20px; color: var(--color-text-primary);"></i>
+        </div>
+
+        <div class="modal-title" id="app-dialog-title">Informasi</div>
+        <div class="modal-desc" id="app-dialog-desc">Pesan sistem.</div>
+
+        <div style="margin-top: 20px; width: 100%;">
+          <button type="button" class="btn btn-primary" style="width: 100%;" onclick="closeAppDialog()">
+            Mengerti
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!--           CUSTOM CONFIRM DIALOG            -->
+    <!-- ========================================== -->
+    <div class="modal-backdrop" id="confirm-dialog-modal" onclick="if(event.target===this) closeConfirmDialog()">
+      <div class="modal-card" style="max-width: 380px;">
+        <button type="button" class="modal-close-btn" onclick="closeConfirmDialog()" aria-label="Tutup modal">
+          <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+        </button>
+
+        <div style="width: 42px; height: 42px; border-radius: 50%; background-color: var(--color-bg-secondary); border: 1px solid var(--color-border-subtle); display: flex; align-items: center; justify-content: center; margin-bottom: 8px;">
+          <i data-lucide="alert-triangle" style="width: 20px; height: 20px; color: var(--color-text-primary);"></i>
+        </div>
+
+        <div class="modal-title" id="confirm-dialog-title">Konfirmasi Tindakan</div>
+        <div class="modal-desc" id="confirm-dialog-desc">Apakah Anda yakin ingin melanjutkan tindakan ini?</div>
+
+        <div style="margin-top: 22px; width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <button type="button" class="btn" style="width: 100%;" onclick="closeConfirmDialog()">
+            Kembali
+          </button>
+          <button type="button" class="btn btn-danger" id="confirm-dialog-btn" style="width: 100%;">
+            Ya, Lanjutkan
+          </button>
+        </div>
+      </div>
+    </div>
+
 
     <!-- ========================================== -->
     <!--             JAVASCRIPT LOGIC               -->
@@ -2281,38 +2332,48 @@
 
       function clearFilesQueue() {
         if (appState.status === 'PROCESSING') {
-          log('Proses sedang berjalan. Batalkan atau pause proses terlebih dahulu sebelum menghapus antrean.', 'warning');
+          showAppDialog('Peringatan', 'Proses sedang berjalan. Batalkan atau pause proses terlebih dahulu sebelum menghapus antrean.', 'warning');
           return;
         }
 
-        // Clean up Object URLs for memory
-        appState.files.forEach(item => {
-          if (item.croppedUrl) {
-            URL.revokeObjectURL(item.croppedUrl);
+        if (appState.files.length === 0) return;
+
+        showConfirmDialog({
+          title: 'Hapus Semua Antrean?',
+          desc: `Apakah Anda yakin ingin menghapus ${appState.files.length} file dari daftar antrean?`,
+          confirmText: 'Ya, Hapus Semua',
+          variant: 'danger',
+          onConfirm: () => {
+            // Clean up Object URLs for memory
+            appState.files.forEach(item => {
+              if (item.croppedUrl) {
+                URL.revokeObjectURL(item.croppedUrl);
+              }
+            });
+
+            appState.files = [];
+            appState.currentIndex = 0;
+            appState.status = 'IDLE';
+            appState.zipBlob = null;
+            appState.totalOriginalSize = 0;
+            appState.totalCroppedSize = 0;
+            appState.totalSavingsSize = 0;
+            appState.selectedPreviewId = null;
+
+            // Reset elements
+            document.getElementById('file-table-body').innerHTML = '';
+            document.getElementById('table-empty-state').style.display = 'flex';
+            document.getElementById('progress-panel').style.display = 'none';
+            document.getElementById('btn-start').setAttribute('disabled', 'true');
+            document.getElementById('btn-download').setAttribute('disabled', 'true');
+            updateFilesQueueHeaderBadge();
+            clearPreviewCanvases();
+            updateGeneralStats();
+            updateControlButtonsState();
+
+            log('Daftar antrean file dibersihkan.', 'info');
           }
         });
-
-        appState.files = [];
-        appState.currentIndex = 0;
-        appState.status = 'IDLE';
-        appState.zipBlob = null;
-        appState.totalOriginalSize = 0;
-        appState.totalCroppedSize = 0;
-        appState.totalSavingsSize = 0;
-        appState.selectedPreviewId = null;
-
-        // Reset elements
-        document.getElementById('file-table-body').innerHTML = '';
-        document.getElementById('table-empty-state').style.display = 'flex';
-        document.getElementById('progress-panel').style.display = 'none';
-        document.getElementById('btn-start').setAttribute('disabled', 'true');
-        document.getElementById('btn-download').setAttribute('disabled', 'true');
-        
-        // Reset preview canvases
-        clearPreviewCanvases();
-
-        updateGeneralStats();
-        log('Seluruh antrean dibersihkan.', 'info');
       }
 
       function clearPreviewCanvases() {
@@ -2711,15 +2772,21 @@
       function cancelQueueProcessing() {
         if (appState.status === 'IDLE') return;
         
-        if (confirm('Apakah Anda yakin ingin membatalkan proses cropping?')) {
-          appState.status = 'STOPPED';
-          log('Proses dibatalkan oleh pengguna.', 'warning');
-          
-          if (appState.pauseResolver) {
-            appState.pauseResolver();
-            appState.pauseResolver = null;
+        showConfirmDialog({
+          title: 'Batalkan Proses Crop?',
+          desc: 'Apakah Anda yakin ingin membatalkan proses cropping yang sedang berjalan?',
+          confirmText: 'Ya, Batalkan',
+          variant: 'danger',
+          onConfirm: () => {
+            appState.status = 'STOPPED';
+            log('Proses dibatalkan oleh pengguna.', 'warning');
+            
+            if (appState.pauseResolver) {
+              appState.pauseResolver();
+              appState.pauseResolver = null;
+            }
           }
-        }
+        });
       }
 
       function haltQueueProcessing() {
@@ -2828,7 +2895,7 @@
       async function downloadZipArchive() {
         const successFiles = appState.files.filter(f => f.status === 'success' && f.croppedBlob);
         if (successFiles.length === 0) {
-          alert('Tidak ada file hasil crop yang berhasil diekspor.');
+          showAppDialog('Informasi', 'Tidak ada file hasil crop yang berhasil diekspor.', 'info');
           return;
         }
 
@@ -2892,7 +2959,7 @@
 
         } catch (err) {
           log(`Gagal membuat berkas ZIP: ${err.message}`, 'error');
-          alert('Gagal mengekspor ZIP: ' + err.message);
+          showAppDialog('Gagal Mengekspor', 'Terjadi kesalahan saat mengekspor ZIP: ' + err.message, 'error');
         } finally {
           zipBtn.removeAttribute('disabled');
           zipBtn.innerHTML = origContent;
@@ -2944,9 +3011,9 @@
       function copyConsoleLogs() {
         const textToCopy = loggerLines.map(l => `[${l.timestamp}] [${l.type.toUpperCase()}] ${l.message}`).join('\n');
         navigator.clipboard.writeText(textToCopy).then(() => {
-          alert('Log berhasil disalin ke clipboard.');
+          showAppDialog('Berhasil', 'Log aktivitas berhasil disalin ke clipboard.', 'success');
         }).catch(err => {
-          alert('Gagal menyalin log: ' + err);
+          showAppDialog('Gagal Menyalin', 'Gagal menyalin log: ' + err, 'error');
         });
       }
 
@@ -2979,9 +3046,61 @@
         document.getElementById('donation-modal').classList.remove('show');
       }
 
+      // === CUSTOM APP DIALOGS (FAIZ INTIFADA DESIGN SYSTEM) ===
+      let activeConfirmCallback = null;
+
+      function showAppDialog(title, desc, type = 'info') {
+        const modal = document.getElementById('app-dialog-modal');
+        document.getElementById('app-dialog-title').textContent = title;
+        document.getElementById('app-dialog-desc').textContent = desc;
+
+        const iconEl = document.getElementById('app-dialog-icon');
+        let iconName = 'info';
+        if (type === 'warning') iconName = 'alert-triangle';
+        if (type === 'error') iconName = 'alert-circle';
+        if (type === 'success') iconName = 'check-circle-2';
+
+        iconEl.setAttribute('data-lucide', iconName);
+        lucide.createIcons({ attrs: { 'stroke-width': 2 } });
+
+        modal.classList.add('show');
+      }
+
+      function closeAppDialog() {
+        document.getElementById('app-dialog-modal').classList.remove('show');
+      }
+
+      function showConfirmDialog({ title, desc, confirmText = 'Ya, Lanjutkan', variant = 'danger', onConfirm }) {
+        const modal = document.getElementById('confirm-dialog-modal');
+        document.getElementById('confirm-dialog-title').textContent = title;
+        document.getElementById('confirm-dialog-desc').textContent = desc;
+
+        const btnEl = document.getElementById('confirm-dialog-btn');
+        btnEl.textContent = confirmText;
+        btnEl.className = `btn ${variant === 'danger' ? 'btn-danger' : 'btn-primary'}`;
+
+        activeConfirmCallback = onConfirm;
+        modal.classList.add('show');
+      }
+
+      function closeConfirmDialog() {
+        document.getElementById('confirm-dialog-modal').classList.remove('show');
+        activeConfirmCallback = null;
+      }
+
+      document.getElementById('confirm-dialog-btn').addEventListener('click', () => {
+        const callback = activeConfirmCallback;
+        closeConfirmDialog();
+        if (callback && typeof callback === 'function') {
+          callback();
+        }
+      });
+
       document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
           closeDonationModal();
+          closeAppDialog();
+          closeConfirmDialog();
         }
       });
 
