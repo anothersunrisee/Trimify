@@ -4,10 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Trimify - Bulk Auto Crop Transparent Pixels</title>
-    <!-- Google Fonts: Inter & JetBrains Mono -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <!-- Satoshi font via Fontshare -->
+    <link rel="preconnect" href="https://api.fontshare.com">
+    <link href="https://api.fontshare.com/v2/css?f[]=satoshi@900,700,500,400&display=swap" rel="stylesheet">
     
     <!-- External Libraries from CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -18,52 +18,70 @@
     <!--                   CSS                      -->
     <!-- ========================================== -->
     <style>
-      /* === DESIGN TOKENS — White Minimalist (Apple / Figma) === */
+      /* === DESIGN TOKENS — Faiz Intifada style === */
       :root {
-        /* Base surfaces */
-        --color-bg:            #FFFFFF;
-        --color-bg-secondary:  #F5F5F7;
-        --color-bg-tertiary:   #EBEBED;
-        --color-border:        #D1D1D6;
-        --color-border-subtle: #E5E5EA;
+        /* Surfaces — warm off-white palette */
+        --color-bg:            #ffffff;       /* surface.muted */
+        --color-bg-secondary:  #ececea;       /* surface.raised */
+        --color-bg-tertiary:   #e6e5e0;       /* surface.strong */
+        --color-border:        #d4d3ce;
+        --color-border-subtle: #e6e5e0;
 
-        /* Text */
-        --color-text-primary:   #1C1C1E;
-        --color-text-secondary: #48484A;
-        --color-text-tertiary:  #6E6E73;
-        --color-text-disabled:  #AEAEB2;
+        /* Text — warm olive */
+        --color-text-primary:   #262510;      /* color.text.primary */
+        --color-text-secondary: #7a7974;      /* color.text.secondary */
+        --color-text-tertiary:  #9a9994;
+        --color-text-disabled:  #b8b7b2;
 
-        /* Accent — Emerald only */
-        --color-accent:        #059669;
-        --color-accent-light:  #ECFDF5;
-        --color-accent-hover:  #047857;
-        --color-accent-ring:   rgba(5, 150, 105, 0.2);
+        /* Accent — dark olive / near-black (primary action) */
+        --color-accent:        #262510;
+        --color-accent-light:  #ececea;
+        --color-accent-hover:  #1a1a0b;
+        --color-accent-ring:   rgba(38, 37, 16, 0.15);
 
-        /* Semantic */
-        --color-success:       #16A34A;
-        --color-success-bg:    #F0FDF4;
-        --color-warning:       #D97706;
-        --color-warning-bg:    #FFFBEB;
-        --color-error:         #DC2626;
-        --color-error-bg:      #FEF2F2;
-        --color-info:          #2563EB;
-        --color-info-bg:       #EFF6FF;
+        /* Semantic — neutral-warm tones */
+        --color-success:       #2d6a4f;
+        --color-success-bg:    #f0f7f4;
+        --color-warning:       #92400e;
+        --color-warning-bg:    #fefce8;
+        --color-error:         #991b1b;
+        --color-error-bg:      #fef2f2;
+        --color-info:          #1e3a5f;
+        --color-info-bg:       #eff6ff;
 
-        /* Shadows */
-        --shadow-xs: 0 1px 2px rgba(0,0,0,0.05);
-        --shadow-sm: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
-        --shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.04);
-        --shadow-lg: 0 10px 15px rgba(0,0,0,0.08), 0 4px 6px rgba(0,0,0,0.04);
+        /* Shadows — faizintifada.com layered shadow system */
+        --shadow-xs: rgba(0,0,0,0.1) 0px 1px 3px 0px, rgba(0,0,0,0.1) 0px 1px 2px -1px;
+        --shadow-sm: rgba(0,0,0,0.1) 0px 1px 3px 0px, rgba(0,0,0,0.1) 0px 1px 2px -1px;
+        --shadow-md: rgba(0,0,0,0.25) 0px 6px 12px 0px, rgba(0,0,0,0.15) 0px 2px 4px 0px;
+        --shadow-lg: rgba(0,0,0,0) 0px 0px 0px 0px, rgba(0,0,0,0) 0px 0px 0px 0px,
+                     rgba(0,0,0,0.14) 0px 28px 70px 0px, rgba(0,0,0,0.1) 0px 14px 32px 0px,
+                     oklab(0.263084 -0.00230259 0.0124794 / 0.1) 0px 0px 0px 1px;
+        --shadow-btn: rgba(255,255,255,0.15) 0px 1px 1px 0px inset,
+                      rgba(0,0,0,0.6) 0px -2px 4px 0px inset,
+                      rgba(0,0,0,0.25) 0px 6px 12px 0px,
+                      rgba(0,0,0,0.15) 0px 2px 4px 0px;
 
-        /* Typography */
-        --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-        --font-mono: 'JetBrains Mono', monospace;
+        /* Typography — Satoshi */
+        --font-sans: 'Satoshi', ui-sans-serif, system-ui, sans-serif;
+        --font-mono: 'Satoshi', ui-sans-serif, system-ui, sans-serif;
 
-        /* Legacy alias — agar JS yang pakai var() lama tetap aman */
+        /* Radius — faizintifada radius scale */
+        --radius-xs: 4px;
+        --radius-sm: 16px;
+        --radius-md: 24px;
+        --radius-lg: 48px;
+        --radius-pill: 9999px;
+
+        /* Motion */
+        --duration-instant: 150ms;
+        --duration-fast:    160ms;
+        --duration-normal:  200ms;
+
+        /* Legacy alias */
         --bg-main:             var(--color-bg);
         --bg-panel:            var(--color-bg-secondary);
         --bg-input:            var(--color-bg-tertiary);
-        --bg-input-hover:      #DDDDE0;
+        --bg-input-hover:      #d8d7d2;
         --border-color:        var(--color-border);
         --text-primary:        var(--color-text-primary);
         --text-secondary:      var(--color-text-secondary);
@@ -74,7 +92,14 @@
         --accent-blue-hover:   var(--color-accent-hover);
         --accent-amber:        var(--color-warning);
         --accent-rose:         var(--color-error);
-        --accent-rose-hover:   #B91C1C;
+        --accent-rose-hover:   #7f1d1d;
+      }
+
+      /* === NUMERIC tabular-nums === */
+      .font-num {
+        font-variant-numeric: tabular-nums;
+        font-feature-settings: 'tnum';
+        letter-spacing: -0.02em;
       }
 
       /* === RESET === */
@@ -87,10 +112,11 @@
       body {
         background-color: var(--color-bg-secondary);
         color: var(--color-text-primary);
-        font-family: var(--font-sans);
-        font-size: 13px;
-        line-height: 1.5;
+        font-family: 'Satoshi', ui-sans-serif, system-ui, sans-serif;
+        font-size: 14px;
+        line-height: 24px;
         letter-spacing: -0.01em;
+        font-weight: 400;
         height: 100vh;
         display: flex;
         flex-direction: column;
@@ -127,15 +153,17 @@
 
       .header-logo {
         background: var(--color-accent);
-        width: 30px;
-        height: 30px;
-        border-radius: 7px;
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
         display: flex;
         align-items: center;
         justify-content: center;
         color: white;
         box-shadow: 0 2px 8px var(--color-accent-ring);
         flex-shrink: 0;
+        overflow: hidden;
+        padding: 6px;
       }
 
       header h1 {
@@ -147,7 +175,7 @@
 
       header p {
         font-size: 11px;
-        color: var(--color-text-tertiary);
+        color: var(--color-text-secondary);
         margin-top: 1px;
         letter-spacing: -0.01em;
       }
@@ -172,9 +200,10 @@
 
       .header-stat-value {
         font-size: 13px;
-        font-weight: 600;
-        color: var(--color-accent);
-        font-family: var(--font-mono);
+        font-weight: 700;
+        color: var(--color-text-primary);
+        font-variant-numeric: tabular-nums;
+        font-feature-settings: 'tnum';
         letter-spacing: -0.02em;
       }
 
@@ -209,13 +238,55 @@
       .section-title {
         font-size: 10px;
         text-transform: uppercase;
-        letter-spacing: 0.07em;
+        letter-spacing: 0.08em;
         color: var(--color-text-tertiary);
-        font-weight: 600;
+        font-weight: 700;
         margin-bottom: 12px;
         display: flex;
         align-items: center;
         gap: 6px;
+      }
+
+      /* === ACCORDION SECTION === */
+      .section-title.collapsible {
+        cursor: pointer;
+        user-select: none;
+        justify-content: space-between;
+        margin-bottom: 0;
+        padding: 0;
+        transition: color var(--duration-fast);
+      }
+
+      .section-title.collapsible:hover {
+        color: var(--color-text-primary);
+      }
+
+      .section-title.collapsible .chevron {
+        transition: transform var(--duration-normal) ease;
+        flex-shrink: 0;
+        opacity: 0.5;
+      }
+
+      .section-title.collapsible.open .chevron {
+        transform: rotate(180deg);
+        opacity: 1;
+      }
+
+      .accordion-body {
+        overflow: hidden;
+        max-height: 0;
+        opacity: 0;
+        transition:
+          max-height var(--duration-normal) ease,
+          opacity var(--duration-fast) ease,
+          margin-top var(--duration-fast) ease;
+        margin-top: 0;
+      }
+
+      .accordion-body.open {
+        max-height: 400px;
+        opacity: 1;
+        margin-top: 12px;
       }
 
       /* === SETTINGS === */
@@ -235,7 +306,7 @@
       }
 
       .setting-label {
-        font-size: 12px;
+        font-size: 13px;
         font-weight: 500;
         color: var(--color-text-primary);
         cursor: default;
@@ -243,13 +314,14 @@
 
       .setting-value {
         font-size: 11px;
-        font-family: var(--font-mono);
-        color: var(--color-accent);
-        background-color: var(--color-accent-light);
-        padding: 1px 6px;
-        border-radius: 4px;
-        border: 1px solid rgba(5, 150, 105, 0.15);
-        font-weight: 500;
+        font-variant-numeric: tabular-nums;
+        font-feature-settings: 'tnum';
+        font-weight: 700;
+        color: var(--color-text-primary);
+        background-color: var(--color-bg-tertiary);
+        padding: 1px 7px;
+        border-radius: var(--radius-pill);
+        border: 1px solid var(--color-border);
       }
 
       /* === SLIDER === */
@@ -267,18 +339,18 @@
       .slider-input::-webkit-slider-thumb {
         -webkit-appearance: none;
         appearance: none;
-        width: 14px;
-        height: 14px;
+        width: 16px;
+        height: 16px;
         border-radius: 50%;
-        background: var(--color-accent);
+        background: var(--color-text-primary);
         cursor: pointer;
         box-shadow: 0 0 0 3px white, 0 0 0 4px var(--color-border);
-        transition: transform 0.15s ease, box-shadow 0.15s ease;
+        transition: transform var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
       }
 
       .slider-input::-webkit-slider-thumb:hover {
         transform: scale(1.1);
-        box-shadow: 0 0 0 3px white, 0 0 0 4px var(--color-accent);
+        box-shadow: 0 0 0 3px white, 0 0 0 4px var(--color-text-primary);
       }
 
       /* === TOGGLE SWITCH === */
@@ -345,8 +417,8 @@
       }
 
       input:checked + .slider-toggle {
-        background-color: var(--color-accent);
-        border-color: var(--color-accent);
+        background-color: var(--color-text-primary);
+        border-color: var(--color-text-primary);
       }
 
       input:checked + .slider-toggle:before {
@@ -360,22 +432,23 @@
         border: 1px solid var(--color-border);
         color: var(--color-text-primary);
         padding: 7px 10px;
-        border-radius: 6px;
+        border-radius: var(--radius-xs);
         outline: none;
         font-family: var(--font-sans);
-        font-size: 12px;
+        font-size: 13px;
+        font-weight: 500;
         cursor: pointer;
-        transition: border-color 0.15s;
+        transition: border-color var(--duration-fast);
         -webkit-appearance: none;
         appearance: none;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236E6E73' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239a9994' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
         background-repeat: no-repeat;
         background-position: right 10px center;
         padding-right: 28px;
       }
 
       .select-input:focus {
-        border-color: var(--color-accent);
+        border-color: var(--color-text-primary);
         box-shadow: 0 0 0 2px var(--color-accent-ring);
       }
 
@@ -413,7 +486,7 @@
         margin-bottom: 8px;
       }
 
-      /* === BUTTONS === */
+      /* === BUTTONS — pill style, dark primary === */
       .btn {
         display: inline-flex;
         align-items: center;
@@ -422,32 +495,38 @@
         background-color: var(--color-bg);
         color: var(--color-text-primary);
         border: 1px solid var(--color-border);
-        padding: 7px 12px;
-        border-radius: 6px;
-        font-size: 12px;
+        padding: 7px 14px;
+        border-radius: var(--radius-pill);
+        font-size: 13px;
         font-weight: 500;
         font-family: var(--font-sans);
         cursor: pointer;
-        transition: all 0.15s ease;
+        transition: all var(--duration-fast) ease;
         outline: none;
         letter-spacing: -0.01em;
         white-space: nowrap;
       }
 
       .btn:hover {
-        background-color: var(--color-bg-secondary);
-        border-color: var(--color-text-disabled);
+        background-color: var(--color-bg-tertiary);
+        border-color: var(--color-text-secondary);
+      }
+
+      .btn:focus-visible {
+        outline: 2px solid var(--color-text-primary);
+        outline-offset: 2px;
       }
 
       .btn:active {
-        transform: scale(0.98);
+        transform: scale(0.97);
       }
 
+      /* Primary — dark olive, pill, layered shadow */
       .btn-primary {
-        background-color: var(--color-accent);
-        border-color: var(--color-accent);
-        color: white;
-        box-shadow: var(--shadow-sm);
+        background-color: var(--color-text-primary);
+        border-color: var(--color-text-primary);
+        color: #ffffff;
+        box-shadow: var(--shadow-btn);
       }
 
       .btn-primary:hover {
@@ -455,11 +534,12 @@
         border-color: var(--color-accent-hover);
       }
 
+      /* Secondary — same dark treatment (download CTA) */
       .btn-secondary {
-        background-color: var(--color-accent);
-        border-color: var(--color-accent);
-        color: white;
-        box-shadow: var(--shadow-sm);
+        background-color: var(--color-text-primary);
+        border-color: var(--color-text-primary);
+        color: #ffffff;
+        box-shadow: var(--shadow-btn);
       }
 
       .btn-secondary:hover {
@@ -467,19 +547,20 @@
         border-color: var(--color-accent-hover);
       }
 
+      /* Danger — warm error tint */
       .btn-danger {
         background-color: var(--color-error-bg);
-        border-color: rgba(220, 38, 38, 0.2);
+        border-color: rgba(153, 27, 27, 0.2);
         color: var(--color-error);
       }
 
       .btn-danger:hover {
-        background-color: #FEE2E2;
-        border-color: rgba(220, 38, 38, 0.4);
+        background-color: #fde8e8;
+        border-color: rgba(153, 27, 27, 0.4);
       }
 
       .btn:disabled {
-        opacity: 0.4;
+        opacity: 0.35;
         cursor: not-allowed;
         pointer-events: none;
       }
@@ -499,40 +580,40 @@
       .dropzone {
         border: 1.5px dashed var(--color-border);
         background-color: var(--color-bg);
-        border-radius: 10px;
-        padding: 24px;
+        border-radius: var(--radius-sm);
+        padding: 14px 18px;
         text-align: center;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         cursor: pointer;
-        transition: all 0.2s ease;
+        transition: all var(--duration-normal) ease;
         flex-shrink: 0;
-        min-height: 120px;
+        min-height: 80px;
         box-shadow: var(--shadow-xs);
       }
 
       .dropzone:hover {
-        border-color: var(--color-accent);
-        background-color: var(--color-accent-light);
+        border-color: var(--color-text-primary);
+        background-color: var(--color-bg-tertiary);
       }
 
       .dropzone.dragover {
-        border-color: var(--color-accent);
-        background-color: var(--color-accent-light);
+        border-color: var(--color-text-primary);
+        background-color: var(--color-bg-tertiary);
         box-shadow: 0 0 0 3px var(--color-accent-ring);
       }
 
       .dropzone-icon {
         color: var(--color-text-tertiary);
         margin-bottom: 10px;
-        transition: transform 0.2s ease, color 0.2s ease;
+        transition: transform var(--duration-normal) ease, color var(--duration-normal) ease;
       }
 
       .dropzone:hover .dropzone-icon {
-        transform: translateY(-3px);
-        color: var(--color-accent);
+        transform: translateY(-2px);
+        color: var(--color-text-primary);
       }
 
       .dropzone-text {
@@ -545,14 +626,14 @@
 
       .dropzone-subtext {
         font-size: 11px;
-        color: var(--color-text-tertiary);
+        color: var(--color-text-secondary);
       }
 
       /* === PROGRESS PANEL === */
       .progress-panel {
         background-color: var(--color-bg);
         border: 1px solid var(--color-border-subtle);
-        border-radius: 8px;
+        border-radius: var(--radius-sm);
         padding: 14px 16px;
         flex-shrink: 0;
         box-shadow: var(--shadow-xs);
@@ -581,8 +662,9 @@
 
       .progress-stats-item strong {
         color: var(--color-text-primary);
-        font-family: var(--font-mono);
-        font-weight: 600;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        font-feature-settings: 'tnum';
       }
 
       .progress-bar-bg {
@@ -595,7 +677,7 @@
       }
 
       .progress-bar-fill {
-        background: linear-gradient(to right, var(--color-accent), #34D399);
+        background: linear-gradient(to right, var(--color-text-primary), #5a5840);
         height: 100%;
         width: 0%;
         transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
@@ -624,20 +706,41 @@
 
       .progress-file-info {
         font-size: 11px;
-        font-family: var(--font-mono);
+        font-weight: 400;
         color: var(--color-text-tertiary);
         white-space: nowrap;
         text-overflow: ellipsis;
         overflow: hidden;
       }
 
-      /* === DASHBOARD BODY (2-col grid) === */
+      /* === DASHBOARD BODY (2-col bento grid) === */
       .dashboard-body {
         display: grid;
-        grid-template-columns: 1fr 1.1fr;
+        grid-template-columns: 1fr 1fr;
         gap: 12px;
         flex: 1;
         overflow: hidden;
+        min-height: 0;
+      }
+
+      /* Left column: progress → file list */
+      .left-column {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        overflow: hidden;
+        min-height: 0;
+      }
+
+      /* File list fills remaining left space */
+      .left-column .file-list-container {
+        flex: 1;
+        min-height: 0;
+      }
+
+      /* Preview offset — sedikit turun */
+      .preview-container {
+        margin-top: 44px;
       }
 
       /* === PANEL SHARED === */
@@ -645,7 +748,7 @@
       .preview-container {
         background-color: var(--color-bg);
         border: 1px solid var(--color-border-subtle);
-        border-radius: 8px;
+        border-radius: var(--radius-sm);
         display: flex;
         flex-direction: column;
         overflow: hidden;
@@ -660,28 +763,28 @@
         align-items: center;
         background-color: var(--color-bg-secondary);
         flex-shrink: 0;
+        border-radius: var(--radius-sm) var(--radius-sm) 0 0;
       }
 
       .panel-title {
         font-size: 11px;
-        font-weight: 600;
+        font-weight: 700;
         color: var(--color-text-secondary);
         display: flex;
         align-items: center;
         gap: 6px;
         text-transform: uppercase;
-        letter-spacing: 0.04em;
+        letter-spacing: 0.06em;
       }
 
       .panel-badge {
         font-size: 10px;
         background-color: var(--color-bg-tertiary);
-        color: var(--color-text-tertiary);
-        padding: 2px 7px;
-        border-radius: 10px;
-        font-family: var(--font-mono);
-        border: 1px solid var(--color-border-subtle);
-        font-weight: 500;
+        color: var(--color-text-secondary);
+        padding: 2px 8px;
+        border-radius: var(--radius-pill);
+        font-weight: 600;
+        border: 1px solid var(--color-border);
       }
 
       /* === TABLE === */
@@ -752,34 +855,35 @@
 
       .badge-pending {
         background-color: var(--color-bg-tertiary);
-        color: var(--color-text-tertiary);
-        border-color: var(--color-border-subtle);
+        color: var(--color-text-secondary);
+        border-color: var(--color-border);
       }
 
       .badge-processing {
         background-color: var(--color-info-bg);
         color: var(--color-info);
-        border-color: rgba(37, 99, 235, 0.2);
+        border-color: rgba(30, 58, 95, 0.2);
       }
 
       .badge-success {
-        background-color: var(--color-accent-light);
-        color: var(--color-accent);
-        border-color: rgba(5, 150, 105, 0.2);
+        background-color: var(--color-success-bg);
+        color: var(--color-success);
+        border-color: rgba(45, 106, 79, 0.2);
       }
 
       .badge-failed {
         background-color: var(--color-error-bg);
         color: var(--color-error);
-        border-color: rgba(220, 38, 38, 0.2);
+        border-color: rgba(153, 27, 27, 0.2);
       }
 
       /* === SAVINGS INDICATOR === */
       .savings-indicator {
         font-size: 11px;
         color: var(--color-success);
-        font-weight: 600;
-        font-family: var(--font-mono);
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        font-feature-settings: 'tnum';
       }
 
       /* === EMPTY STATE === */
@@ -847,45 +951,42 @@
         -webkit-backdrop-filter: blur(4px);
       }
 
-      /* Checkerboard — light version for white theme */
+      /* Checkerboard — warm neutral for Satoshi palette */
       .checkerboard-bg {
         flex: 1;
         display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 16px;
-        overflow: auto;
+        align-items: stretch;
+        justify-content: stretch;
+        overflow: hidden;
         background-image:
-          linear-gradient(45deg, #E5E5EA 25%, transparent 25%),
-          linear-gradient(-45deg, #E5E5EA 25%, transparent 25%),
-          linear-gradient(45deg, transparent 75%, #E5E5EA 75%),
-          linear-gradient(-45deg, transparent 75%, #E5E5EA 75%);
+          linear-gradient(45deg, #dddcda 25%, transparent 25%),
+          linear-gradient(-45deg, #dddcda 25%, transparent 25%),
+          linear-gradient(45deg, transparent 75%, #dddcda 75%),
+          linear-gradient(-45deg, transparent 75%, #dddcda 75%);
         background-size: 16px 16px;
         background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
-        background-color: #F5F5F7;
+        background-color: #ececea;
       }
 
       .preview-image-wrapper {
-        position: relative;
-        max-width: 100%;
-        max-height: 100%;
+        width: 100%;
+        height: 100%;
         display: flex;
         align-items: center;
         justify-content: center;
+        overflow: hidden;
       }
 
       .preview-canvas {
-        max-width: 100%;
-        max-height: 280px;
+        width: 100%;
+        height: 100%;
         object-fit: contain;
         display: block;
-        box-shadow: var(--shadow-md);
-        border-radius: 2px;
       }
 
       /* === PREVIEW META BAR === */
       .preview-meta-row {
-        padding: 10px 14px;
+        padding: 10px 16px;
         border-top: 1px solid var(--color-border-subtle);
         background-color: var(--color-bg-secondary);
         display: flex;
@@ -893,6 +994,7 @@
         align-items: center;
         flex-shrink: 0;
         gap: 8px;
+        border-radius: 0 0 var(--radius-sm) var(--radius-sm);
       }
 
       .preview-meta-group {
@@ -905,15 +1007,17 @@
         font-size: 9px;
         color: var(--color-text-tertiary);
         text-transform: uppercase;
-        letter-spacing: 0.06em;
-        font-weight: 600;
+        letter-spacing: 0.08em;
+        font-weight: 700;
       }
 
       .preview-meta-val {
-        font-size: 11px;
+        font-size: 12px;
         font-weight: 600;
-        font-family: var(--font-mono);
+        font-variant-numeric: tabular-nums;
+        font-feature-settings: 'tnum';
         color: var(--color-text-primary);
+        letter-spacing: -0.01em;
       }
 
       .preview-meta-val.green {
@@ -921,24 +1025,82 @@
       }
 
       /* === CONSOLE LOG PANEL === */
+      .bottom-bar {
+        display: grid;
+        grid-template-columns: 4fr 1fr;
+        gap: 12px;
+        flex-shrink: 0;
+        height: 130px;
+      }
+
       .console-panel {
         background-color: var(--color-bg);
         border: 1px solid var(--color-border-subtle);
-        border-radius: 8px;
-        height: 130px;
+        border-radius: var(--radius-sm);
+        height: 100%;
         display: flex;
         flex-direction: column;
         overflow: hidden;
-        flex-shrink: 0;
         box-shadow: var(--shadow-xs);
+      }
+
+      /* === ABOUT CARD === */
+      .about-card {
+        background-color: var(--color-bg);
+        border: 1px solid var(--color-border-subtle);
+        border-radius: var(--radius-sm);
+        box-shadow: var(--shadow-xs);
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: space-between;
+        padding: 14px 16px;
+        overflow: hidden;
+      }
+
+      .about-card-name {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--color-text-primary);
+        letter-spacing: -0.02em;
+        line-height: 1.3;
+      }
+
+      .about-card-desc {
+        font-size: 11px;
+        color: var(--color-text-secondary);
+        line-height: 1.5;
+        margin-top: 4px;
+      }
+
+      .about-card-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--color-text-primary);
+        text-decoration: none;
+        margin-top: 10px;
+        padding: 4px 10px;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-pill);
+        transition: background-color var(--duration-fast), border-color var(--duration-fast);
+        white-space: nowrap;
+      }
+
+      .about-card-link:hover {
+        background-color: var(--color-bg-secondary);
+        border-color: var(--color-text-secondary);
       }
 
       .console-output {
         flex: 1;
         overflow-y: auto;
         padding: 8px 14px;
-        font-family: var(--font-mono);
+        font-family: 'Inter', sans-serif;
         font-size: 11px;
+        font-weight: 400;
         display: flex;
         flex-direction: column;
         gap: 2px;
@@ -953,7 +1115,10 @@
       .log-timestamp {
         color: var(--color-text-tertiary);
         flex-shrink: 0;
-        opacity: 0.6;
+        opacity: 0.5;
+        font-weight: 400;
+        font-variant-numeric: tabular-nums;
+        font-feature-settings: 'tnum';
       }
 
       .log-text {
@@ -1011,7 +1176,7 @@
         opacity: 1;
       }
 
-      /* === TOAST NOTIFICATION === */
+      /* === TOAST NOTIFICATION — faizintifada shadow === */
       .toast {
         position: fixed;
         bottom: 24px;
@@ -1019,7 +1184,7 @@
         background-color: var(--color-bg);
         border: 1px solid var(--color-border-subtle);
         padding: 14px 18px;
-        border-radius: 10px;
+        border-radius: var(--radius-sm);
         box-shadow: var(--shadow-lg);
         display: flex;
         align-items: center;
@@ -1035,12 +1200,12 @@
       }
 
       .toast-icon {
-        color: var(--color-accent);
+        color: var(--color-text-primary);
         flex-shrink: 0;
       }
 
       .toast-title {
-        font-weight: 600;
+        font-weight: 700;
         font-size: 13px;
         margin-bottom: 2px;
         color: var(--color-text-primary);
@@ -1049,7 +1214,7 @@
 
       .toast-desc {
         font-size: 11px;
-        color: var(--color-text-tertiary);
+        color: var(--color-text-secondary);
         line-height: 1.4;
       }
     </style>
@@ -1062,8 +1227,8 @@
     <header>
       <div class="header-title-container">
         <div class="header-logo" id="logo">
-          <i data-lucide="scissors" style="width: 20px; height: 20px;"></i>
-        </div>
+            <img src="/favicon.svg" alt="Trimify logo" style="width: 18px; height: 18px; display: block;">
+          </div>
         <div>
           <h1>Trimify</h1>
           <p>Bulk Transparent PNG Trim &amp; Crop Canvas Engine</p>
@@ -1114,51 +1279,58 @@
           </div>
         </div>
 
-        <!-- Parameters Settings Section -->
+        <!-- Parameters Settings Section (collapsible) -->
         <div class="sidebar-section">
-          <div class="section-title">
-            <i data-lucide="sliders-horizontal" style="width: 14px; height: 14px;"></i>
-            Parameter Crop
-          </div>
-          
-          <!-- Alpha Threshold -->
-          <div class="setting-group">
-            <div class="setting-label-row">
-              <label class="setting-label tooltip">
-                Alpha Threshold
-                <i data-lucide="help-circle" style="width: 12px; height: 12px; display: inline; vertical-align: middle;"></i>
-                <span class="tooltiptext">Batas nilai transparansi pixel (0-255). Pixel dengan nilai alpha &lt; threshold akan dianggap transparan sepenuhnya.</span>
-              </label>
-              <span class="setting-value" id="val-threshold">1</span>
-            </div>
-            <input type="range" id="input-threshold" class="slider-input" min="0" max="255" value="1">
+          <div class="section-title collapsible" id="toggle-params" onclick="toggleAccordion('params-body', this)">
+            <span style="display:flex; align-items:center; gap:6px;">
+              <i data-lucide="sliders-horizontal" style="width: 13px; height: 13px;"></i>
+              Parameter Crop
+            </span>
+            <i data-lucide="chevron-down" class="chevron" style="width: 13px; height: 13px;"></i>
           </div>
 
-          <!-- Ignore Noise -->
-          <div class="setting-group">
-            <div class="setting-label-row">
-              <label class="setting-label tooltip">
-                Ignore Small Noise
-                <i data-lucide="help-circle" style="width: 12px; height: 12px; display: inline; vertical-align: middle;"></i>
-                <span class="tooltiptext">Mengabaikan bintik pixel terisolasi berukuran kecil. Nilai pixel menentukan ukuran area pemeriksaan sekitar pixel.</span>
-              </label>
-              <span class="setting-value" id="val-noise">0 px</span>
-            </div>
-            <input type="range" id="input-noise" class="slider-input" min="0" max="20" value="0">
-          </div>
+          <div class="accordion-body" id="params-body">
 
-          <!-- Padding -->
-          <div class="setting-group">
-            <div class="setting-label-row">
-              <label class="setting-label tooltip">
-                Padding Area
-                <i data-lucide="help-circle" style="width: 12px; height: 12px; display: inline; vertical-align: middle;"></i>
-                <span class="tooltiptext">Menambahkan sisa ruang transparan sebesar X pixel di sekeliling objek setelah dipotong.</span>
-              </label>
-              <span class="setting-value" id="val-padding">0 px</span>
+            <!-- Alpha Threshold -->
+            <div class="setting-group">
+              <div class="setting-label-row">
+                <label class="setting-label tooltip">
+                  Alpha Threshold
+                  <i data-lucide="help-circle" style="width: 12px; height: 12px; display: inline; vertical-align: middle;"></i>
+                  <span class="tooltiptext">Batas nilai transparansi pixel (0-255). Pixel dengan nilai alpha &lt; threshold akan dianggap transparan sepenuhnya.</span>
+                </label>
+                <span class="setting-value" id="val-threshold">1</span>
+              </div>
+              <input type="range" id="input-threshold" class="slider-input" min="0" max="255" value="1">
             </div>
-            <input type="range" id="input-padding" class="slider-input" min="0" max="100" value="0">
-          </div>
+
+            <!-- Ignore Noise -->
+            <div class="setting-group">
+              <div class="setting-label-row">
+                <label class="setting-label tooltip">
+                  Ignore Small Noise
+                  <i data-lucide="help-circle" style="width: 12px; height: 12px; display: inline; vertical-align: middle;"></i>
+                  <span class="tooltiptext">Mengabaikan bintik pixel terisolasi berukuran kecil. Nilai pixel menentukan ukuran area pemeriksaan sekitar pixel.</span>
+                </label>
+                <span class="setting-value" id="val-noise">0 px</span>
+              </div>
+              <input type="range" id="input-noise" class="slider-input" min="0" max="20" value="0">
+            </div>
+
+            <!-- Padding -->
+            <div class="setting-group">
+              <div class="setting-label-row">
+                <label class="setting-label tooltip">
+                  Padding Area
+                  <i data-lucide="help-circle" style="width: 12px; height: 12px; display: inline; vertical-align: middle;"></i>
+                  <span class="tooltiptext">Menambahkan sisa ruang transparan sebesar X pixel di sekeliling objek setelah dipotong.</span>
+                </label>
+                <span class="setting-value" id="val-padding">0 px</span>
+              </div>
+              <input type="range" id="input-padding" class="slider-input" min="0" max="100" value="0">
+            </div>
+
+          </div><!-- /.accordion-body -->
         </div>
 
         <!-- Output Format settings -->
@@ -1271,93 +1443,98 @@
 
       <!-- CENTRAL WORKSPACE -->
       <main class="workspace">
-        
-        <!-- BIG DRAG & DROP ZONE -->
-        <div class="dropzone" id="dropzone">
-          <div class="dropzone-icon">
-            <i data-lucide="upload-cloud" style="width: 40px; height: 40px;"></i>
+
+        <!-- FULL-WIDTH DROPZONE -->
+        <div class="dropzone" id="dropzone" style="flex-direction: row; gap: 14px; min-height: 72px; padding: 14px 24px; align-items: center; text-align: left; flex-shrink: 0;">
+          <div class="dropzone-icon" style="margin-bottom: 0; flex-shrink: 0;">
+            <i data-lucide="upload-cloud" style="width: 28px; height: 28px;"></i>
           </div>
-          <div class="dropzone-text">Seret &amp; Taruh File atau Folder PNG di Sini</div>
-          <div class="dropzone-subtext">Semua proses 100% lokal &mdash; tidak ada upload ke server</div>
+          <div>
+            <div class="dropzone-text">Seret &amp; Taruh File atau Folder PNG di Sini</div>
+            <div class="dropzone-subtext">100% lokal &mdash; tidak ada upload ke server</div>
+          </div>
         </div>
 
-        <!-- PROGRESS BAR PANEL -->
-        <div class="progress-panel" id="progress-panel" style="display: none;">
-          <div class="progress-header">
-            <div class="progress-status" id="progress-status">Menunggu mulai proses...</div>
-            <div class="progress-stats-row">
-              <div class="progress-stats-item">Waktu Berjalan: <strong id="progress-time-elapsed">00:00</strong></div>
-              <div class="progress-stats-item">Estimasi Sisa: <strong id="progress-time-remaining">~00:00</strong></div>
-            </div>
-          </div>
-          <div class="progress-bar-bg">
-            <div class="progress-bar-fill" id="progress-bar-fill"></div>
-          </div>
-          <div class="progress-file-info" id="progress-file-info">File saat ini: -</div>
-        </div>
-
-        <!-- DASHBOARD GRID: FILE TABLE & PREVIEW -->
+        <!-- BENTO GRID: LEFT COLUMN + RIGHT PREVIEW -->
         <div class="dashboard-body">
-          
-          <!-- LEFT PANEL: TABLE -->
-          <div class="file-list-container">
-            <div class="panel-header">
-              <div class="panel-title">
-                <i data-lucide="list" style="width: 14px; height: 14px;"></i>
-                Daftar File Antrean
-              </div>
-              <div class="panel-badge" id="badge-total-files">0 File</div>
-            </div>
-            <div class="file-table-wrapper">
-              <table id="file-table">
-                <thead>
-                  <tr>
-                    <th>Nama File</th>
-                    <th style="width: 80px;">Status</th>
-                    <th style="width: 110px;">Resolusi</th>
-                    <th style="width: 90px;">Ukuran</th>
-                    <th style="width: 70px;">Persen</th>
-                  </tr>
-                </thead>
-                <tbody id="file-table-body">
-                  <!-- JS populated rows -->
-                </tbody>
-              </table>
-              <div class="empty-state" id="table-empty-state">
-                <div class="empty-state-icon">
-                  <i data-lucide="image" style="width: 40px; height: 40px;"></i>
-                </div>
-                <p style="font-size: 0.85rem;">Antrean kosong. Taruh gambar atau gunakan panel samping untuk mulai.</p>
-              </div>
-            </div>
-          </div>
 
-          <!-- RIGHT PANEL: PREVIEW -->
+          <!-- LEFT COLUMN: progress → file list -->
+          <div class="left-column">
+
+            <!-- PROGRESS BAR PANEL -->
+            <div class="progress-panel" id="progress-panel" style="display: none;">
+              <div class="progress-header">
+                <div class="progress-status" id="progress-status">Memproses...</div>
+                <div class="progress-stats-row">
+                  <div class="progress-stats-item">Berjalan: <strong id="progress-time-elapsed">00:00</strong></div>
+                  <div class="progress-stats-item">Sisa: <strong id="progress-time-remaining">~00:00</strong></div>
+                </div>
+              </div>
+              <div class="progress-bar-bg">
+                <div class="progress-bar-fill" id="progress-bar-fill"></div>
+              </div>
+              <div class="progress-file-info" id="progress-file-info">File saat ini: -</div>
+            </div>
+
+            <!-- FILE QUEUE TABLE -->
+            <div class="file-list-container">
+              <div class="panel-header">
+                <div class="panel-title">
+                  <i data-lucide="list" style="width: 13px; height: 13px;"></i>
+                  Daftar Antrean
+                </div>
+                <div class="panel-badge" id="badge-total-files">0 File</div>
+              </div>
+              <div class="file-table-wrapper">
+                <table id="file-table">
+                  <thead>
+                    <tr>
+                      <th>Nama File</th>
+                      <th style="width: 68px;">Status</th>
+                      <th style="width: 80px;">Resolusi</th>
+                      <th style="width: 72px;">Ukuran</th>
+                      <th style="width: 52px;">-</th>
+                    </tr>
+                  </thead>
+                  <tbody id="file-table-body">
+                    <!-- JS populated rows -->
+                  </tbody>
+                </table>
+                <div class="empty-state" id="table-empty-state">
+                  <div class="empty-state-icon">
+                    <i data-lucide="image" style="width: 36px; height: 36px;"></i>
+                  </div>
+                  <p>Antrean kosong. Taruh gambar atau gunakan panel samping untuk mulai.</p>
+                </div>
+              </div>
+            </div>
+
+          </div><!-- /.left-column -->
+
+          <!-- RIGHT PANEL: PREVIEW (dominant, full height) -->
           <div class="preview-container">
             <div class="panel-header">
               <div class="panel-title">
-                <i data-lucide="eye" style="width: 14px; height: 14px;"></i>
-                Detektor &amp; Preview Crop
+                <i data-lucide="eye" style="width: 13px; height: 13px;"></i>
+                Preview Crop
               </div>
               <div class="panel-badge" id="preview-filename-badge">Pilih File</div>
             </div>
-            
+
             <div class="preview-workspace" id="preview-workspace">
-              <!-- Grid showing side by side -->
               <div class="preview-stage">
-                <!-- BEFORE PREVIEW -->
+                <!-- BEFORE -->
                 <div class="preview-box">
-                  <div class="preview-box-title">Asli (Sebelum)</div>
+                  <div class="preview-box-title">Sebelum</div>
                   <div class="checkerboard-bg">
                     <div class="preview-image-wrapper">
                       <canvas class="preview-canvas" id="canvas-preview-before"></canvas>
                     </div>
                   </div>
                 </div>
-                
-                <!-- AFTER PREVIEW -->
+                <!-- AFTER -->
                 <div class="preview-box">
-                  <div class="preview-box-title">Hasil (Sesudah)</div>
+                  <div class="preview-box-title">Sesudah</div>
                   <div class="checkerboard-bg">
                     <div class="preview-image-wrapper">
                       <canvas class="preview-canvas" id="canvas-preview-after"></canvas>
@@ -1366,7 +1543,7 @@
                 </div>
               </div>
 
-              <!-- PREVIEW METADATA BAR -->
+              <!-- PREVIEW META BAR -->
               <div class="preview-meta-row" id="preview-meta-row" style="opacity: 0.6;">
                 <div class="preview-meta-group">
                   <span class="preview-meta-label">Dimensi Awal</span>
@@ -1386,25 +1563,43 @@
                 </div>
               </div>
             </div>
-          </div>
-        </div>
+          </div><!-- /.preview-container -->
 
-        <!-- BOTTOM CONSOLE PANEL -->
-        <div class="console-panel">
-          <div class="panel-header">
-            <div class="panel-title">
-              <i data-lucide="terminal" style="width: 12px; height: 12px;"></i>
-              Log Aktivitas
+        </div><!-- /.dashboard-body -->
+
+        <!-- BOTTOM BAR: Log 80% + About 20% -->
+        <div class="bottom-bar">
+
+          <!-- CONSOLE LOG PANEL -->
+          <div class="console-panel">
+            <div class="panel-header">
+              <div class="panel-title">
+                <i data-lucide="terminal" style="width: 12px; height: 12px;"></i>
+                Log Aktivitas
+              </div>
+              <div style="display: flex; gap: 6px;">
+                <button class="btn" style="padding: 3px 8px; font-size: 11px;" id="btn-copy-log">Copy</button>
+                <button class="btn" style="padding: 3px 8px; font-size: 11px;" id="btn-clear-log">Clear</button>
+              </div>
             </div>
-            <div style="display: flex; gap: 6px;">
-              <button class="btn" style="padding: 3px 8px; font-size: 11px;" id="btn-copy-log">Copy</button>
-              <button class="btn" style="padding: 3px 8px; font-size: 11px;" id="btn-clear-log">Clear</button>
+            <div class="console-output" id="console-output">
+              <!-- Logging lines populated here -->
             </div>
           </div>
-          <div class="console-output" id="console-output">
-            <!-- Logging lines populated here -->
+
+          <!-- ABOUT CARD -->
+          <div class="about-card">
+            <div>
+              <div class="about-card-name">Trimify</div>
+              <div class="about-card-desc">Bulk auto-crop transparent PNG — 100% local processing, zero upload.</div>
+            </div>
+            <a href="https://fajarahnf.vercel.app" target="_blank" rel="noopener" class="about-card-link">
+              <i data-lucide="external-link" style="width: 10px; height: 10px;"></i>
+              fajarahnf.vercel.app
+            </a>
           </div>
-        </div>
+
+        </div><!-- /.bottom-bar -->
 
       </main>
     </div>
@@ -2618,6 +2813,14 @@
         setTimeout(() => {
           toast.classList.remove('show');
         }, 5000);
+      }
+
+      // === ACCORDION TOGGLE ===
+      function toggleAccordion(bodyId, titleEl) {
+        const body = document.getElementById(bodyId);
+        const isOpen = body.classList.contains('open');
+        body.classList.toggle('open', !isOpen);
+        titleEl.classList.toggle('open', !isOpen);
       }
 
     </script>
