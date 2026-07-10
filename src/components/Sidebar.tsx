@@ -246,9 +246,6 @@ function ActionButtons() {
     </div>
   );
 }
-    </>
-  );
-}
 
 export default function Sidebar() {
   return (
