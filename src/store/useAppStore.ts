@@ -33,6 +33,10 @@ interface AppState {
   totalCroppedSize: number;
   zipBlob: Blob | null;
   pauseResolver: (() => void) | null;
+  
+  // Pagination
+  currentPage: number;
+  itemsPerPage: number;
 
   // Actions
   setStatus: (status: AppStatus) => void;
@@ -50,6 +54,7 @@ interface AppState {
   setTotalStats: (orig: number, cropped: number) => void;
   setZipBlob: (blob: Blob | null) => void;
   setPauseResolver: (fn: (() => void) | null) => void;
+  setCurrentPage: (page: number) => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -65,6 +70,8 @@ export const useAppStore = create<AppState>((set) => ({
   totalCroppedSize: 0,
   zipBlob: null,
   pauseResolver: null,
+  currentPage: 1,
+  itemsPerPage: 50,
 
   setStatus: (status) => set({ status }),
   setFiles: (files) => set({ files }),
@@ -98,4 +105,5 @@ export const useAppStore = create<AppState>((set) => ({
     set({ totalOriginalSize: orig, totalCroppedSize: cropped, totalSavingsSize: orig - cropped }),
   setZipBlob: (blob) => set({ zipBlob: blob }),
   setPauseResolver: (fn) => set({ pauseResolver: fn }),
+  setCurrentPage: (page) => set({ currentPage: page }),
 }));

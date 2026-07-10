@@ -194,7 +194,12 @@ export function updateFileListUI() {
   }
   emptyState.style.display = 'none';
 
-  body.innerHTML = files.map((item) => {
+  const { currentPage, itemsPerPage } = useAppStore.getState();
+  const startIdx = (currentPage - 1) * itemsPerPage;
+  const endIdx = startIdx + itemsPerPage;
+  const paginatedFiles = files.slice(startIdx, endIdx);
+
+  body.innerHTML = paginatedFiles.map((item) => {
     let statusBadge = '';
     let resString = '-';
     let sizeString = Utils.formatBytes(item.originalSize);
@@ -250,6 +255,14 @@ async function processNextInQueue() {
   const idx = useAppStore.getState().files.indexOf(nextItem);
   useAppStore.getState().setCurrentIndex(idx);
   useAppStore.getState().updateFile(nextItem.id, { status: 'processing' });
+  
+  // Pagination auto-navigation during processing
+  const { currentPage, itemsPerPage } = useAppStore.getState();
+  const expectedPage = Math.floor(idx / itemsPerPage) + 1;
+  if (expectedPage !== currentPage) {
+    useAppStore.getState().setCurrentPage(expectedPage);
+  }
+
   updateFileListUI();
 
   const progStatus = document.getElementById('progress-status');
